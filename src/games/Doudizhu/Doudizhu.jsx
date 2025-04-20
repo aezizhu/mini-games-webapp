@@ -60,6 +60,9 @@ const Hand = styled.div`
   flex-wrap: nowrap;
   gap: 8px;
   margin: 10px 0;
+  overflow-x: auto;
+  max-width: 95vw;
+  padding-bottom: 6px;
 `;
 
 const Card = styled.div`
@@ -72,6 +75,7 @@ const Card = styled.div`
   text-align: center;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   user-select: none;
+  transition: transform 0.15s;
 `;
 
 const CardBack = styled(Card)`
@@ -284,7 +288,7 @@ const Doudizhu = () => {
               <PlayedCards>
                 {played[0].length > 0 && played[0].map((c, i) => <Card key={i}>{c}</Card>)}
               </PlayedCards>
-              <Hand>
+              <Hand style={{ maxWidth: '95vw', overflowX: 'auto' }}>
                 {hands[0].map(card => (
                   <Card
                     key={card}
@@ -292,6 +296,7 @@ const Doudizhu = () => {
                       background: selected.includes(card) ? '#ffd' : '#fff',
                       border: selected.includes(card) ? '2px solid orange' : '#aaa',
                       cursor: 'pointer',
+                      transform: hands[0].length > 17 ? 'scale(0.85)' : 'scale(1)',
                     }}
                     onClick={() => toggleCard(card)}
                   >
