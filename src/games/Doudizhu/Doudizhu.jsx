@@ -269,6 +269,10 @@ const Doudizhu = () => {
     setLandlord(idx);
     setStage('play');
     setCurrent(idx);
+    // If landlord isn't user, initiate first robot play
+    if (idx !== 0) {
+      setTimeout(() => robotPlay(idx, newHands, [[], [], []], null), 900);
+    }
   };
 
   // Play a card (with rule check)
