@@ -15,8 +15,8 @@ import Home from './pages/Home';
 import Game2048 from './games/Game2048';
 import Tetris from './games/Tetris/Tetris.jsx';
 import Snake from './games/Snake/Snake.jsx';
-const SlotMachine = () => <div>Slot Machine Game (Coming Soon)</div>;
-const Points24 = () => <div>24 Points Game (Coming Soon)</div>;
+import SlotMachine from './games/SlotMachine/SlotMachine.jsx';
+import Points24 from './games/Points24/Points24.jsx';
 const Doudizhu = () => <div>Doudizhu Game (Coming Soon)</div>;
 const Help = () => <div>Help & Instructions (Coming Soon)</div>;
 

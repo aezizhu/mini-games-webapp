@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { GameContainer } from '../../styles/Layout';
 
 const cols = 20;
 const rows = 20;
-// Movement speeds
-const initialSpeed = 200;
-const normalSpeed = initialSpeed;
-const fastSpeed = 50;
+const normalSpeed = 120;
+const fastSpeed = 40;
 
 const getRandomFood = (snake) => {
   let newFood;
@@ -39,25 +37,35 @@ const Cell = styled.div`
       : theme.colors.snake.background};
 `;
 
-const Snake = () => {
-  const initialSnake = [
-    { x: Math.floor(cols / 2), y: Math.floor(rows / 2) },
-    { x: Math.floor(cols / 2) - 1, y: Math.floor(rows / 2) },
-    { x: Math.floor(cols / 2) - 2, y: Math.floor(rows / 2) },
-  ];
+const initialSnake = [
+  { x: Math.floor(cols / 2), y: Math.floor(rows / 2) },
+  { x: Math.floor(cols / 2) - 1, y: Math.floor(rows / 2) },
+  { x: Math.floor(cols / 2) - 2, y: Math.floor(rows / 2) }
+];
 
+const Snake = () => {
   const [snake, setSnake] = useState(initialSnake);
-  const [direction, setDirection] = useState({ x: 1, y: 0 });
   const [food, setFood] = useState(getRandomFood(initialSnake));
+  const [direction, setDirection] = useState({ x: 1, y: 0 });
   const [speed, setSpeed] = useState(normalSpeed);
   const [paused, setPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
 
+  // Use ref to always get latest direction in tick
+  const directionRef = useRef(direction);
+  directionRef.current = direction;
+
+  // Prevent 180-degree turns
+  const lastDirectionRef = useRef(direction);
+
+  // Pause/Restart handlers
   const handlePause = () => setPaused(p => !p);
   const handleRestart = () => {
     setSnake(initialSnake);
     setDirection({ x: 1, y: 0 });
+    directionRef.current = { x: 1, y: 0 };
+    lastDirectionRef.current = { x: 1, y: 0 };
     setFood(getRandomFood(initialSnake));
     setSpeed(normalSpeed);
     setScore(0);
@@ -65,90 +73,83 @@ const Snake = () => {
     setPaused(false);
   };
 
-  const moveSnake = useCallback(() => {
-    const head = snake[0];
-    const newHead = { x: head.x + direction.x, y: head.y + direction.y };
-
-    // Wall collision
-    if (
-      newHead.x < 0 ||
-      newHead.x >= cols ||
-      newHead.y < 0 ||
-      newHead.y >= rows
-    ) {
-      setGameOver(true);
-      setSpeed(null);
-      return;
-    }
-
-    // Self collision
-    if (snake.some(seg => seg.x === newHead.x && seg.y === newHead.y)) {
-      setGameOver(true);
-      setSpeed(null);
-      return;
-    }
-
-    let newSnake = [newHead, ...snake];
-    if (newHead.x === food.x && newHead.y === food.y) {
-      setScore(s => s + 1);
-      setFood(getRandomFood(newSnake));
-    } else {
-      newSnake.pop();
-    }
-    setSnake(newSnake);
-  }, [snake, direction, food]);
-
-  // Game loop
+  // Main game loop
   useEffect(() => {
-    if (speed && !gameOver && !paused) {
-      const timer = setInterval(moveSnake, speed);
-      return () => clearInterval(timer);
-    }
-  }, [moveSnake, speed, gameOver, paused]);
+    if (gameOver || paused) return;
+    const interval = setInterval(() => {
+      setSnake(prevSnake => {
+        const head = prevSnake[0];
+        const dir = directionRef.current;
+        const newHead = { x: head.x + dir.x, y: head.y + dir.y };
 
-  // Controls
+        // Wall collision
+        if (
+          newHead.x < 0 || newHead.x >= cols ||
+          newHead.y < 0 || newHead.y >= rows
+        ) {
+          setGameOver(true);
+          return prevSnake;
+        }
+
+        // Self collision
+        if (prevSnake.some(seg => seg.x === newHead.x && seg.y === newHead.y)) {
+          setGameOver(true);
+          return prevSnake;
+        }
+
+        let grow = (newHead.x === food.x && newHead.y === food.y);
+        let newSnake = [newHead, ...prevSnake];
+        if (!grow) {
+          newSnake.pop();
+        } else {
+          setScore(s => s + 1);
+          setFood(getRandomFood(newSnake));
+        }
+        return newSnake;
+      });
+      lastDirectionRef.current = directionRef.current;
+    }, speed);
+    return () => clearInterval(interval);
+  }, [speed, gameOver, paused, food]);
+
+  // Keyboard controls
   useEffect(() => {
     const handleKeyDown = e => {
       if (
-        ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Escape', ' '].includes(
-          e.key
-        )
+        ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Escape', ' '].includes(e.key)
       ) e.preventDefault();
       if (gameOver) return;
       if (paused) return;
 
+      let nextDir;
       switch (e.key) {
         case 'ArrowLeft':
-          if (direction.x !== 1) {
-            setDirection({ x: -1, y: 0 });
-            moveSnake(); // immediate move for responsiveness
-          }
+          nextDir = { x: -1, y: 0 };
           break;
         case 'ArrowRight':
-          if (direction.x !== -1) {
-            setDirection({ x: 1, y: 0 });
-            moveSnake();
-          }
+          nextDir = { x: 1, y: 0 };
           break;
         case 'ArrowUp':
-          if (direction.y !== 1) {
-            setDirection({ x: 0, y: -1 });
-            moveSnake();
-          }
+          nextDir = { x: 0, y: -1 };
           break;
         case 'ArrowDown':
-          if (direction.y !== -1) setDirection({ x: 0, y: 1 });
-          // Soft drop speed
+          nextDir = { x: 0, y: 1 };
           setSpeed(fastSpeed);
           break;
         case 'Escape':
           handlePause();
-          break;
+          return;
         case ' ':
           handleRestart();
-          break;
+          return;
         default:
-          break;
+          return;
+      }
+      // Prevent 180-degree turn
+      const last = lastDirectionRef.current;
+      if (nextDir && !(nextDir.x === -last.x && nextDir.y === -last.y)) {
+        setDirection(nextDir);
+        directionRef.current = nextDir;
       }
     };
     const handleKeyUp = e => {
@@ -160,7 +161,7 @@ const Snake = () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, [direction, gameOver, paused, moveSnake]);
+  }, [gameOver, paused]);
 
   return (
     <GameContainer>
