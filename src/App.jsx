@@ -17,7 +17,7 @@ import Tetris from './games/Tetris/Tetris.jsx';
 import Snake from './games/Snake/Snake.jsx';
 import SlotMachine from './games/SlotMachine/SlotMachine.jsx';
 import Points24 from './games/Points24/Points24.jsx';
-const Doudizhu = () => <div>Doudizhu Game (Coming Soon)</div>;
+import Doudizhu from './games/Doudizhu/Doudizhu.jsx';
 const Help = () => <div>Help & Instructions (Coming Soon)</div>;
 
 // Main App component
