@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { GameContainer } from '../../styles/Layout';
 
@@ -261,8 +261,10 @@ const Doudizhu = () => {
     finishCall(ncs);
   };
   const finishCall = cs => {
+    console.log('[Doudizhu] finishCall bids:', cs);
     const max = Math.max(...cs);
     const idx = max > 0 ? cs.indexOf(max) : 0;
+    console.log('[Doudizhu] landlord idx:', idx);
     const newHands = [...hands];
     newHands[idx] = [...newHands[idx], ...bottom];
     setHands(newHands);
@@ -271,6 +273,7 @@ const Doudizhu = () => {
     setCurrent(idx);
     // If landlord isn't user, initiate first robot play
     if (idx !== 0) {
+      console.log('[Doudizhu] starting first robotPlay, idx=', idx, 'hands=', newHands);
       setTimeout(() => robotPlay(idx, newHands, [[], [], []], null), 900);
     }
   };
@@ -313,6 +316,8 @@ const Doudizhu = () => {
 
   // Robot logic: play valid hand or pass
   const robotPlay = (idx, curHands, curPlayed, curLastHand) => {
+    console.log(`[Doudizhu] robotPlay called idx=${idx}, curLastHand=`, curLastHand);
+    console.log('[Doudizhu] robot hands:', curHands[idx]);
     // Try to find a valid hand to beat curLastHand
     const hand = curHands[idx];
     // Try all singles
@@ -341,6 +346,7 @@ const Doudizhu = () => {
     }
     // TODO: add more hand types (triple, bomb, straight, etc)
     if (found) {
+      console.log(`[Doudizhu] robot found cards to play idx=${idx}:`, found);
       const newHands = [...curHands];
       newHands[idx] = hand.filter(c => !found.includes(c));
       const newPlayed = [...curPlayed];
@@ -353,6 +359,7 @@ const Doudizhu = () => {
         if ((idx + 1) % 3 !== 0) robotPlay((idx + 1) % 3, newHands, newPlayed, parseHandType(found));
       }, 900);
     } else {
+      console.log(`[Doudizhu] robot idx=${idx} cannot find valid card, passing`);
       // Pass
       const newPlayed = [...curPlayed];
       newPlayed[idx] = [];
