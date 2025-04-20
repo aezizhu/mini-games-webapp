@@ -120,18 +120,6 @@ const Tetris = () => {
 
   // Drop piece
   const drop = () => {
-    // Check if current piece is above the visible grid and cannot move down
-    if (checkCollision(grid, current.shape, { x: position.x, y: position.y + 1 })) {
-      // If any part of the piece is above the grid, game over
-      const isAbove = current.shape.some((rowArr, r) =>
-        rowArr.some((cell, c) => cell && position.y + r < 0)
-      );
-      if (isAbove || position.y < 0) {
-        setGameOver(true);
-        setDropTime(null);
-        return;
-      }
-    }
     if (!checkCollision(grid, current.shape, { x: position.x, y: position.y + 1 })) {
       setPosition(prev => ({ ...prev, y: prev.y + 1 }));
     } else {
@@ -152,6 +140,18 @@ const Tetris = () => {
       const next = randomTetromino();
       setCurrent(next);
       setPosition({ x: 3, y: 0 });
+
+      // Check if the new piece would immediately collide (game over)
+      const isGameOver = checkCollision(
+        newGrid,
+        TETROMINOS[next.key],
+        { x: 3, y: 0 }
+      );
+
+      if (isGameOver) {
+        setGameOver(true);
+        setDropTime(null);
+      }
     }
   };
 
@@ -205,8 +205,8 @@ const Tetris = () => {
           const rotated = rotate(current.shape);
           if (!checkCollision(grid, rotated, { x: position.x, y: position.y })) {
             setCurrent(prev => ({ ...prev, shape: rotated }));
-            // Reset drop timer after rotation to prevent stalling
-            setDropTime(prev => prev); // This triggers useEffect to reset interval
+            // Immediately drop one row on rotation to prevent stalling
+            drop();
           }
           break;
         case 'Escape':
