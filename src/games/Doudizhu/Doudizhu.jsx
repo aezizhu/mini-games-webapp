@@ -120,6 +120,13 @@ const DifficultySelect = styled.div`
   gap: 12px;
 `;
 
+const ButtonsWrapper = styled.div`
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 14px 0;
+`;
+
 // --- Helper: Card value for comparison ---
 function getCardValue(card) {
   if (card === 'Black Joker') return 16;
@@ -141,61 +148,82 @@ function groupByRank(cards) {
 // --- Parse hand type ---
 function parseHandType(cards) {
   if (cards.length === 0) return null;
+  // Group by rank
   const map = groupByRank(cards);
-  const ranks = Object.keys(map).map(r => getCardValue(r + SUITS[0])).sort((a, b) => a - b);
-  const counts = Object.values(map).sort((a, b) => b - a);
+  const rankArr = Object.keys(map);
+  const counts = Object.values(map);
+  const values = rankArr.map(r => getCardValue(r + SUITS[0])).sort((a, b) => a - b);
   // Rocket
-  if (cards.length === 2 && cards.includes('Black Joker') && cards.includes('Red Joker')) {
-    return { type: 'rocket' };
-  }
+  if (cards.length === 2 && cards.includes('Black Joker') && cards.includes('Red Joker')) return { type: 'rocket' };
   // Bomb
-  if (cards.length === 4 && counts[0] === 4) {
-    const rankVal = getCardValue(cards.find(c => map[c.replace(/[^\dJQKA]+/, '')] === 4));
-    return { type: 'bomb', value: rankVal };
-  }
+  if (cards.length === 4 && counts.includes(4)) return { type: 'bomb', value: values.find((v, i) => counts[i] === 4) };
   // Single
   if (cards.length === 1) return { type: 'single', value: getCardValue(cards[0]) };
   // Pair
   if (cards.length === 2 && counts[0] === 2) return { type: 'pair', value: getCardValue(cards[0]) };
   // Triple
   if (cards.length === 3 && counts[0] === 3) return { type: 'triple', value: getCardValue(cards[0]) };
-  // Triple with attachments
-  if (cards.length === 4 && counts[0] === 3 && counts[1] === 1) {
-    return { type: 'triple1', value: getCardValue(cards.find(c => map[c.replace(/[^\dJQKA]+/, '')] === 3)) };
-  }
-  if (cards.length === 5 && counts[0] === 3 && counts[1] === 2) {
-    return { type: 'triple2', value: getCardValue(cards.find(c => map[c.replace(/[^\dJQKA]+/, '')] === 3)) };
-  }
-  // Four with two singles or two pairs
-  if (cards.length === 6 && counts[0] === 4 && (counts[1] === 1 && counts[2] === 1 || counts[1] === 2)) {
-    return { type: 'four2', value: getCardValue(cards.find(c => map[c.replace(/[^\dJQKA]+/, '')] === 4)) };
-  }
-  // Straight (min 5, no 2 or jokers)
-  if (cards.length >= 5 && counts.every(c => c === 1)) {
-    const vals = cards.map(getCardValue).sort((a, b) => a - b);
-    if (vals[vals.length - 1] < 12) {
-      let ok = true;
-      for (let i = 1; i < vals.length; i++) {
-        if (vals[i] !== vals[i - 1] + 1) ok = false;
+  // Three with one
+  if (cards.length === 4 && counts.includes(3) && counts.includes(1)) return { type: 'triple1', value: values.find((v, i) => counts[i] === 3) };
+  // Three with two
+  if (cards.length === 5 && counts.includes(3) && counts.includes(2)) return { type: 'triple2', value: values.find((v, i) => counts[i] === 3) };
+  // Four with two singles (4+1+1)
+  if (cards.length === 6 && counts.includes(4) && counts.filter(x => x === 1).length === 2) return { type: 'four2', value: values.find((v, i) => counts[i] === 4) };
+  // Four with two pairs (4+2+2)
+  if (cards.length === 8 && counts.includes(4) && counts.filter(x => x === 2).length === 2) return { type: 'four22', value: values.find((v, i) => counts[i] === 4) };
+  // Straight (min 5, all single, no 2/joker)
+  if (cards.length >= 5 && counts.every(x => x === 1)) {
+    if (values[values.length-1] < 12) {
+      for (let i = 1; i < values.length; i++) {
+        if (values[i] !== values[i-1]+1) return null;
       }
-      if (ok) return { type: 'straight', value: vals[0], len: vals.length };
+      return { type: 'straight', value: values[0], len: cards.length };
     }
   }
-  // Double straight (min 3 pairs)
-  if (cards.length >= 6 && cards.length % 2 === 0 && counts.every(c => c === 2)) {
-    const vals = Object.keys(map).map(r => map[r] === 2 ? getCardValue(r + SUITS[0]) : 0).filter(v => v).sort((a, b) => a - b);
-    if (vals[vals.length - 1] < 12) {
-      let ok = true;
-      for (let i = 1; i < vals.length; i++) {
-        if (vals[i] !== vals[i - 1] + 1) ok = false;
+  // Double straight (min 6, even, all pairs, no 2/joker)
+  if (cards.length >= 6 && cards.length % 2 === 0 && counts.every(x => x === 2)) {
+    if (values[values.length-1] < 12) {
+      for (let i = 1; i < values.length; i++) {
+        if (values[i] !== values[i-1]+1) return null;
       }
-      if (ok) return { type: 'doubleStraight', value: vals[0], len: vals.length };
+      return { type: 'doubleStraight', value: values[0], len: cards.length/2 };
     }
   }
-  // Plane without attachments (min 2 triples)
-  if (cards.length >= 6 && cards.length % 3 === 0 && counts.every(c => c === 3)) {
-    const vals = Object.keys(map).map(r => getCardValue(r + SUITS[0])).sort((a, b) => a - b);
-    if (vals[vals.length - 1] < 12) return { type: 'plane', value: vals[0], len: vals.length / 3 };
+  // Plane (min 6, triple triple ...)
+  if (cards.length >= 6 && cards.length % 3 === 0 && counts.every(x => x === 3)) {
+    if (values[values.length-1] < 12) {
+      for (let i = 1; i < values.length; i++) {
+        if (values[i] !== values[i-1]+1) return null;
+      }
+      return { type: 'plane', value: values[0], len: cards.length/3 };
+    }
+  }
+  // Plane with single wings (e.g. 33344456)
+  if (cards.length >= 8 && cards.length % 4 === 0) {
+    let tripleRanks = rankArr.filter(r => map[r] === 3);
+    if (tripleRanks.length === cards.length/4*2) {
+      const tripleVals = tripleRanks.map(r => getCardValue(r + SUITS[0])).sort((a,b)=>a-b);
+      if (tripleVals[tripleVals.length-1] < 12) {
+        for (let i = 1; i < tripleVals.length; i++) {
+          if (tripleVals[i] !== tripleVals[i-1]+1) return null;
+        }
+        return { type: 'plane1', value: tripleVals[0], len: tripleVals.length };
+      }
+    }
+  }
+  // Plane with pair wings (e.g. 3334445566)
+  if (cards.length >= 10 && cards.length % 5 === 0) {
+    let tripleRanks = rankArr.filter(r => map[r] === 3);
+    let pairRanks = rankArr.filter(r => map[r] === 2);
+    if (tripleRanks.length === cards.length/5*2 && pairRanks.length === cards.length/5) {
+      const tripleVals = tripleRanks.map(r => getCardValue(r + SUITS[0])).sort((a,b)=>a-b);
+      if (tripleVals[tripleVals.length-1] < 12) {
+        for (let i = 1; i < tripleVals.length; i++) {
+          if (tripleVals[i] !== tripleVals[i-1]+1) return null;
+        }
+        return { type: 'plane2', value: tripleVals[0], len: tripleVals.length };
+      }
+    }
   }
   return null;
 }
@@ -207,10 +235,122 @@ function compareHands(last, next) {
   if (next.type === 'rocket') return true;
   if (next.type === 'bomb' && last.type !== 'bomb') return true;
   if (next.type !== last.type) return false;
-  if ((next.type === 'straight' || next.type === 'doubleStraight') && next.len !== last.len) return false;
-  if (next.type === 'plane' && next.len !== last.len) return false;
-  return (next.value > last.value);
+  if ((next.type === 'straight' || next.type === 'doubleStraight' || next.type === 'plane' || next.type === 'plane1' || next.type === 'plane2') && next.len !== last.len) return false;
+  return next.value > last.value;
 }
+
+// --- Robot AI: find playable hand ---
+function robotFindPlayableHand(hand, lastHand) {
+  // Generate all possible hands (single, pair, triple, bomb, rocket, etc)
+  const allCombos = [];
+  // Helper to group cards by rank
+  const map = groupByRank(hand);
+  const ranks = Object.keys(map);
+  // Bomb
+  for (const r of ranks) {
+    if (map[r] === 4) {
+      const bomb = hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r);
+      allCombos.push(bomb);
+    }
+  }
+  // Rocket
+  if (hand.includes('Black Joker') && hand.includes('Red Joker')) {
+    allCombos.push(['Black Joker', 'Red Joker']);
+  }
+  // Triple, triple+1, triple+2
+  for (const r of ranks) {
+    if (map[r] === 3) {
+      const triple = hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r);
+      allCombos.push(triple);
+      // With one
+      for (const c of hand) {
+        if (c.replace(/[^\dJQKA]+/, '') !== r) {
+          allCombos.push([...triple, c]);
+        }
+      }
+      // With pair
+      for (const r2 of ranks) {
+        if (r2 !== r && map[r2] >= 2) {
+          const pair = hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r2).slice(0,2);
+          allCombos.push([...triple, ...pair]);
+        }
+      }
+    }
+  }
+  // Pair
+  for (const r of ranks) {
+    if (map[r] === 2) {
+      const pair = hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r);
+      allCombos.push(pair);
+    }
+  }
+  // Single
+  for (const c of hand) {
+    allCombos.push([c]);
+  }
+  // Straight (min 5)
+  const sortedVals = ranks.map(r => getCardValue(r + SUITS[0])).filter(v => v < 12).sort((a,b)=>a-b);
+  for (let len = 5; len <= sortedVals.length; len++) {
+    for (let i = 0; i <= sortedVals.length-len; i++) {
+      let ok = true;
+      for (let j = 1; j < len; j++) {
+        if (sortedVals[i+j] !== sortedVals[i]+j) ok = false;
+      }
+      if (ok) {
+        const seqRanks = sortedVals.slice(i, i+len).map(v => RANKS[v-3]);
+        const seq = hand.filter(c => seqRanks.includes(c.replace(/[^\dJQKA]+/, '')));
+        if (seq.length === len) allCombos.push(seq);
+      }
+    }
+  }
+  // Try all combos, prefer minimal that can beat lastHand
+  let candidates = allCombos
+    .map(c => ({ c, t: parseHandType(c) }))
+    .filter(x => x.t && compareHands(lastHand, x.t));
+  // If can't beat, try bomb/rocket
+  if (candidates.length === 0 && lastHand && lastHand.type !== 'bomb' && lastHand.type !== 'rocket') {
+    candidates = allCombos
+      .map(c => ({ c, t: parseHandType(c) }))
+      .filter(x => x.t && (x.t.type === 'bomb' || x.t.type === 'rocket'));
+  }
+  // Pick the minimal value hand
+  if (candidates.length > 0) {
+    candidates.sort((a,b) => a.t.value - b.t.value);
+    return candidates[0].c;
+  }
+  return null;
+}
+
+// --- Robot AI: play valid hand or pass ---
+const robotPlay = (idx, curHands, curPlayed, curLastHand) => {
+  console.log(`[Doudizhu] robotPlay called idx=${idx}, curLastHand=`, curLastHand);
+  console.log('[Doudizhu] robot hands:', curHands[idx]);
+  const hand = curHands[idx];
+  const found = robotFindPlayableHand(hand, curLastHand);
+  if (found) {
+    console.log(`[Doudizhu] robot found cards to play idx=${idx}:`, found);
+    const newHands = [...curHands];
+    newHands[idx] = hand.filter(c => !found.includes(c));
+    const newPlayed = [...curPlayed];
+    newPlayed[idx] = [...found];
+    setHands(newHands);
+    setPlayed(newPlayed);
+    setLastHand(parseHandType(found));
+    setCurrent((idx + 1) % 3);
+    setTimeout(() => {
+      if ((idx + 1) % 3 !== 0) robotPlay((idx + 1) % 3, newHands, newPlayed, parseHandType(found));
+    }, 900);
+  } else {
+    console.log(`[Doudizhu] robot idx=${idx} cannot find valid card, passing`);
+    const newPlayed = [...curPlayed];
+    newPlayed[idx] = [];
+    setPlayed(newPlayed);
+    setCurrent((idx + 1) % 3);
+    setTimeout(() => {
+      if ((idx + 1) % 3 !== 0) robotPlay((idx + 1) % 3, curHands, newPlayed, curLastHand);
+    }, 900);
+  }
+};
 
 const Doudizhu = () => {
   const [difficulty, setDifficulty] = useState('easy');
@@ -314,63 +454,6 @@ const Doudizhu = () => {
     setTimeout(() => robotPlay(1, hands, played, lastHand), 900);
   };
 
-  // Robot logic: play valid hand or pass
-  const robotPlay = (idx, curHands, curPlayed, curLastHand) => {
-    console.log(`[Doudizhu] robotPlay called idx=${idx}, curLastHand=`, curLastHand);
-    console.log('[Doudizhu] robot hands:', curHands[idx]);
-    // Try to find a valid hand to beat curLastHand
-    const hand = curHands[idx];
-    // Try all singles
-    let found = null;
-    for (let i = 0; i < hand.length; ++i) {
-      const t = parseHandType([hand[i]]);
-      if (compareHands(curLastHand, t)) {
-        found = [hand[i]];
-        break;
-      }
-    }
-    // Try all pairs
-    if (!found) {
-      for (let i = 0; i < hand.length; ++i) {
-        for (let j = i + 1; j < hand.length; ++j) {
-          if (hand[i].replace(/[^\dJQKA]+/, '') === hand[j].replace(/[^\dJQKA]+/, '')) {
-            const t = parseHandType([hand[i], hand[j]]);
-            if (compareHands(curLastHand, t)) {
-              found = [hand[i], hand[j]];
-              break;
-            }
-          }
-        }
-        if (found) break;
-      }
-    }
-    // TODO: add more hand types (triple, bomb, straight, etc)
-    if (found) {
-      console.log(`[Doudizhu] robot found cards to play idx=${idx}:`, found);
-      const newHands = [...curHands];
-      newHands[idx] = hand.filter(c => !found.includes(c));
-      const newPlayed = [...curPlayed];
-      newPlayed[idx] = [...found];
-      setHands(newHands);
-      setPlayed(newPlayed);
-      setLastHand(parseHandType(found));
-      setCurrent((idx + 1) % 3);
-      setTimeout(() => {
-        if ((idx + 1) % 3 !== 0) robotPlay((idx + 1) % 3, newHands, newPlayed, parseHandType(found));
-      }, 900);
-    } else {
-      console.log(`[Doudizhu] robot idx=${idx} cannot find valid card, passing`);
-      // Pass
-      const newPlayed = [...curPlayed];
-      newPlayed[idx] = [];
-      setPlayed(newPlayed);
-      setCurrent((idx + 1) % 3);
-      setTimeout(() => {
-        if ((idx + 1) % 3 !== 0) robotPlay((idx + 1) % 3, curHands, newPlayed, curLastHand);
-      }, 900);
-    }
-  };
-
   // Check win
   if (hands.some(h => h.length === 0)) {
     setTimeout(() => alert('Game Over!'), 300);
@@ -393,6 +476,17 @@ const Doudizhu = () => {
     setPlayed([[], [], []]);
     setLastHand(null);
   };
+
+  // Automatic robot move when it's a robot's turn
+  useEffect(() => {
+    if (stage === 'play' && current !== 0) {
+      // simulate thinking delay
+      const timer = setTimeout(() => {
+        robotPlay(current, hands, played, lastHand);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [current, stage, hands, played, lastHand]);
 
   // UI rendering
   return (
@@ -491,10 +585,10 @@ const Doudizhu = () => {
                   </Card>
                 ))}
               </Hand>
-              <div style={{ margin: '14px 0' }}>
+              <ButtonsWrapper>
                 <button onClick={play} disabled={selected.length === 0 || current !== 0 || !parseHandType(selected) || !compareHands(lastHand, parseHandType(selected))}>Play Selected</button>
                 <button onClick={pass} disabled={current !== 0 || !lastHand}>Pass</button>
-              </div>
+              </ButtonsWrapper>
             </PlayerArea>
           </div>
         </Table>
