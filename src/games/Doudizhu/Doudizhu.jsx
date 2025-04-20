@@ -120,6 +120,98 @@ const DifficultySelect = styled.div`
   gap: 12px;
 `;
 
+// --- Helper: Card value for comparison ---
+function getCardValue(card) {
+  if (card === 'Black Joker') return 16;
+  if (card === 'Red Joker') return 17;
+  const rank = card.replace(/[^\dJQKA]+/, '');
+  return RANKS.indexOf(rank);
+}
+
+// --- Helper: Group cards by rank ---
+function groupByRank(cards) {
+  const map = {};
+  for (const card of cards) {
+    const rank = card.replace(/[^\dJQKA]+/, '');
+    map[rank] = (map[rank] || 0) + 1;
+  }
+  return map;
+}
+
+// --- Parse hand type ---
+function parseHandType(cards) {
+  if (cards.length === 0) return null;
+  const map = groupByRank(cards);
+  const ranks = Object.keys(map).map(r => getCardValue(r + SUITS[0])).sort((a, b) => a - b);
+  const counts = Object.values(map).sort((a, b) => b - a);
+  // Rocket
+  if (cards.length === 2 && cards.includes('Black Joker') && cards.includes('Red Joker')) {
+    return { type: 'rocket' };
+  }
+  // Bomb
+  if (cards.length === 4 && counts[0] === 4) {
+    const rankVal = getCardValue(cards.find(c => map[c.replace(/[^\dJQKA]+/, '')] === 4));
+    return { type: 'bomb', value: rankVal };
+  }
+  // Single
+  if (cards.length === 1) return { type: 'single', value: getCardValue(cards[0]) };
+  // Pair
+  if (cards.length === 2 && counts[0] === 2) return { type: 'pair', value: getCardValue(cards[0]) };
+  // Triple
+  if (cards.length === 3 && counts[0] === 3) return { type: 'triple', value: getCardValue(cards[0]) };
+  // Triple with attachments
+  if (cards.length === 4 && counts[0] === 3 && counts[1] === 1) {
+    return { type: 'triple1', value: getCardValue(cards.find(c => map[c.replace(/[^\dJQKA]+/, '')] === 3)) };
+  }
+  if (cards.length === 5 && counts[0] === 3 && counts[1] === 2) {
+    return { type: 'triple2', value: getCardValue(cards.find(c => map[c.replace(/[^\dJQKA]+/, '')] === 3)) };
+  }
+  // Four with two singles or two pairs
+  if (cards.length === 6 && counts[0] === 4 && (counts[1] === 1 && counts[2] === 1 || counts[1] === 2)) {
+    return { type: 'four2', value: getCardValue(cards.find(c => map[c.replace(/[^\dJQKA]+/, '')] === 4)) };
+  }
+  // Straight (min 5, no 2 or jokers)
+  if (cards.length >= 5 && counts.every(c => c === 1)) {
+    const vals = cards.map(getCardValue).sort((a, b) => a - b);
+    if (vals[vals.length - 1] < 12) {
+      let ok = true;
+      for (let i = 1; i < vals.length; i++) {
+        if (vals[i] !== vals[i - 1] + 1) ok = false;
+      }
+      if (ok) return { type: 'straight', value: vals[0], len: vals.length };
+    }
+  }
+  // Double straight (min 3 pairs)
+  if (cards.length >= 6 && cards.length % 2 === 0 && counts.every(c => c === 2)) {
+    const vals = Object.keys(map).map(r => map[r] === 2 ? getCardValue(r + SUITS[0]) : 0).filter(v => v).sort((a, b) => a - b);
+    if (vals[vals.length - 1] < 12) {
+      let ok = true;
+      for (let i = 1; i < vals.length; i++) {
+        if (vals[i] !== vals[i - 1] + 1) ok = false;
+      }
+      if (ok) return { type: 'doubleStraight', value: vals[0], len: vals.length };
+    }
+  }
+  // Plane without attachments (min 2 triples)
+  if (cards.length >= 6 && cards.length % 3 === 0 && counts.every(c => c === 3)) {
+    const vals = Object.keys(map).map(r => getCardValue(r + SUITS[0])).sort((a, b) => a - b);
+    if (vals[vals.length - 1] < 12) return { type: 'plane', value: vals[0], len: vals.length / 3 };
+  }
+  return null;
+}
+
+// --- Compare two hands ---
+function compareHands(last, next) {
+  if (!next) return false;
+  if (!last) return true;
+  if (next.type === 'rocket') return true;
+  if (next.type === 'bomb' && last.type !== 'bomb') return true;
+  if (next.type !== last.type) return false;
+  if ((next.type === 'straight' || next.type === 'doubleStraight') && next.len !== last.len) return false;
+  if (next.type === 'plane' && next.len !== last.len) return false;
+  return (next.value > last.value);
+}
+
 const Doudizhu = () => {
   const [difficulty, setDifficulty] = useState('easy');
   const [hands, setHands] = useState([[], [], []]);
@@ -130,6 +222,8 @@ const Doudizhu = () => {
   const [selected, setSelected] = useState([]);
   const [history, setHistory] = useState([[], [], []]); // [[cards], [cards], [cards]]
   const [played, setPlayed] = useState([[], [], []]); // last played for each
+  const [lastHand, setLastHand] = useState(null); // last valid played hand
+  const [callScores, setCallScores] = useState([null, null, null]); // bids for landlord
 
   // Start game after selecting difficulty
   const startGame = () => {
@@ -138,21 +232,57 @@ const Doudizhu = () => {
     const handB = deck.slice(17, 34);
     const handC = deck.slice(34, 51);
     const bottomCards = deck.slice(51);
-    const newHands = [handA, handB, handC];
-    newHands[0] = [...newHands[0], ...bottomCards]; // You are always landlord
-    setHands(newHands);
+    setHands([handA, handB, handC]);
     setBottom(bottomCards);
-    setLandlord(0);
-    setStage('play');
+    setCallScores([null, null, null]);
+    setLandlord(null);
+    setStage('call');
     setCurrent(0);
     setHistory([[], [], []]);
     setSelected([]);
     setPlayed([[], [], []]);
+    setLastHand(null);
   };
 
-  // Play a card (only single card for demo)
+  // Bidding logic
+  const userCall = score => {
+    const cs = [...callScores]; cs[0] = score; setCallScores(cs);
+    if (1 < 3) setTimeout(() => nextCall(1, cs), 300);
+    else finishCall(cs);
+  };
+  const nextCall = (idx, cs) => {
+    setCurrent(idx);
+    setTimeout(() => robotCall(idx, cs), 500);
+  };
+  const robotCall = (idx, cs) => {
+    const score = Math.floor(Math.random() * 4); // 0=Pass,1-3
+    const ncs = [...cs]; ncs[idx] = score; setCallScores(ncs);
+    if (idx < 2) return nextCall(idx + 1, ncs);
+    finishCall(ncs);
+  };
+  const finishCall = cs => {
+    const max = Math.max(...cs);
+    const idx = max > 0 ? cs.indexOf(max) : 0;
+    const newHands = [...hands];
+    newHands[idx] = [...newHands[idx], ...bottom];
+    setHands(newHands);
+    setLandlord(idx);
+    setStage('play');
+    setCurrent(idx);
+  };
+
+  // Play a card (with rule check)
   const play = () => {
     if (selected.length === 0) return;
+    const handType = parseHandType(selected);
+    if (!handType) {
+      alert('Invalid hand type!');
+      return;
+    }
+    if (!compareHands(lastHand, handType)) {
+      alert('You must play a higher valid hand!');
+      return;
+    }
     const myHand = hands[0].filter(c => !selected.includes(c));
     const newHands = [myHand, hands[1], hands[2]];
     const newPlayed = [...played];
@@ -165,43 +295,75 @@ const Doudizhu = () => {
     ]);
     setSelected([]);
     setPlayed(newPlayed);
+    setLastHand(handType);
     setCurrent(1);
-    setTimeout(() => robotPlay(1, newHands, newPlayed), 900);
+    setTimeout(() => robotPlay(1, newHands, newPlayed, handType), 900);
   };
 
-  // Robot logic: play single card, show played card
-  const robotPlay = (idx, curHands, curPlayed) => {
+  // Pass (skip turn)
+  const pass = () => {
+    setPlayed(p => { const np = [...p]; np[0] = []; return np; });
+    setCurrent(1);
+    setTimeout(() => robotPlay(1, hands, played, lastHand), 900);
+  };
+
+  // Robot logic: play valid hand or pass
+  const robotPlay = (idx, curHands, curPlayed, curLastHand) => {
+    // Try to find a valid hand to beat curLastHand
     const hand = curHands[idx];
-    if (hand.length === 0) return;
-    let card;
-    if (difficulty === 'easy') {
-      card = hand[Math.floor(Math.random() * hand.length)];
-    } else if (difficulty === 'normal') {
-      card = hand[0];
-    } else {
-      card = hand.slice().sort((a, b) => {
-        const rankA = RANKS.indexOf(a.replace(/[^\dJQKA]+/, ''));
-        const rankB = RANKS.indexOf(b.replace(/[^\dJQKA]+/, ''));
-        return rankB - rankA;
-      })[0];
+    // Try all singles
+    let found = null;
+    for (let i = 0; i < hand.length; ++i) {
+      const t = parseHandType([hand[i]]);
+      if (compareHands(curLastHand, t)) {
+        found = [hand[i]];
+        break;
+      }
     }
-    const newHands = [...curHands];
-    newHands[idx] = hand.filter(c => c !== card);
-    const newPlayed = [...curPlayed];
-    newPlayed[idx] = [card];
-    setHands(newHands);
-    setHistory(h => {
-      const copy = h.map(arr => [...arr]);
-      copy[idx].push([card]);
-      return copy;
-    });
-    setPlayed(newPlayed);
-    const next = (idx + 1) % 3;
-    setCurrent(next);
-    if (next !== 0) {
-      setTimeout(() => robotPlay(next, newHands, newPlayed), 900);
+    // Try all pairs
+    if (!found) {
+      for (let i = 0; i < hand.length; ++i) {
+        for (let j = i + 1; j < hand.length; ++j) {
+          if (hand[i].replace(/[^\dJQKA]+/, '') === hand[j].replace(/[^\dJQKA]+/, '')) {
+            const t = parseHandType([hand[i], hand[j]]);
+            if (compareHands(curLastHand, t)) {
+              found = [hand[i], hand[j]];
+              break;
+            }
+          }
+        }
+        if (found) break;
+      }
+    }
+    // TODO: add more hand types (triple, bomb, straight, etc)
+    if (found) {
+      const newHands = [...curHands];
+      newHands[idx] = hand.filter(c => !found.includes(c));
+      const newPlayed = [...curPlayed];
+      newPlayed[idx] = [...found];
+      setHands(newHands);
+      setPlayed(newPlayed);
+      setLastHand(parseHandType(found));
+      setCurrent((idx + 1) % 3);
+      setTimeout(() => {
+        if ((idx + 1) % 3 !== 0) robotPlay((idx + 1) % 3, newHands, newPlayed, parseHandType(found));
+      }, 900);
+    } else {
+      // Pass
+      const newPlayed = [...curPlayed];
+      newPlayed[idx] = [];
+      setPlayed(newPlayed);
+      setCurrent((idx + 1) % 3);
+      setTimeout(() => {
+        if ((idx + 1) % 3 !== 0) robotPlay((idx + 1) % 3, curHands, newPlayed, curLastHand);
+      }, 900);
     }
   };
+
+  // Check win
+  if (hands.some(h => h.length === 0)) {
+    setTimeout(() => alert('Game Over!'), 300);
+  }
 
   // Select/deselect cards
   const toggleCard = card => {
@@ -218,6 +380,7 @@ const Doudizhu = () => {
     setSelected([]);
     setCurrent(0);
     setPlayed([[], [], []]);
+    setLastHand(null);
   };
 
   // UI rendering
@@ -239,6 +402,19 @@ const Doudizhu = () => {
             ))}
           </DifficultySelect>
           <button onClick={startGame}>Start Game</button>
+        </div>
+      )}
+      {stage === 'call' && (
+        <div style={{ margin: '16px 0' }}>
+          <div>Call Scores: {callScores.map((s,i) => <span key={i} style={{ marginRight: 8 }}>{PLAYER_NAMES[i]}: {s == null ? '-' : s === 0 ? 'Pass' : s}</span>)}</div>
+          {current === 0 ? (
+            <div style={{ marginTop: 8 }}>
+              {[1,2,3].map(s => <button key={s} onClick={() => userCall(s)}>Call {s}</button>)}
+              <button onClick={() => userCall(0)}>Pass</button>
+            </div>
+          ) : (
+            <div style={{ marginTop: 8 }}>{PLAYER_NAMES[current]} is calling...</div>
+          )}
         </div>
       )}
       {stage === 'play' && (
@@ -305,7 +481,8 @@ const Doudizhu = () => {
                 ))}
               </Hand>
               <div style={{ margin: '14px 0' }}>
-                <button onClick={play} disabled={selected.length === 0 || current !== 0}>Play Selected</button>
+                <button onClick={play} disabled={selected.length === 0 || current !== 0 || !parseHandType(selected) || !compareHands(lastHand, parseHandType(selected))}>Play Selected</button>
+                <button onClick={pass} disabled={current !== 0 || !lastHand}>Pass</button>
               </div>
             </PlayerArea>
           </div>
