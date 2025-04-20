@@ -4,7 +4,10 @@ import { GameContainer } from '../../styles/Layout';
 
 const cols = 20;
 const rows = 20;
+// Movement speeds
 const initialSpeed = 200;
+const normalSpeed = initialSpeed;
+const fastSpeed = 50;
 
 const getRandomFood = (snake) => {
   let newFood;
@@ -46,7 +49,7 @@ const Snake = () => {
   const [snake, setSnake] = useState(initialSnake);
   const [direction, setDirection] = useState({ x: 1, y: 0 });
   const [food, setFood] = useState(getRandomFood(initialSnake));
-  const [speed, setSpeed] = useState(initialSpeed);
+  const [speed, setSpeed] = useState(normalSpeed);
   const [paused, setPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [score, setScore] = useState(0);
@@ -56,7 +59,7 @@ const Snake = () => {
     setSnake(initialSnake);
     setDirection({ x: 1, y: 0 });
     setFood(getRandomFood(initialSnake));
-    setSpeed(initialSpeed);
+    setSpeed(normalSpeed);
     setScore(0);
     setGameOver(false);
     setPaused(false);
@@ -116,16 +119,27 @@ const Snake = () => {
 
       switch (e.key) {
         case 'ArrowLeft':
-          if (direction.x !== 1) setDirection({ x: -1, y: 0 });
+          if (direction.x !== 1) {
+            setDirection({ x: -1, y: 0 });
+            moveSnake(); // immediate move for responsiveness
+          }
           break;
         case 'ArrowRight':
-          if (direction.x !== -1) setDirection({ x: 1, y: 0 });
+          if (direction.x !== -1) {
+            setDirection({ x: 1, y: 0 });
+            moveSnake();
+          }
           break;
         case 'ArrowUp':
-          if (direction.y !== 1) setDirection({ x: 0, y: -1 });
+          if (direction.y !== 1) {
+            setDirection({ x: 0, y: -1 });
+            moveSnake();
+          }
           break;
         case 'ArrowDown':
           if (direction.y !== -1) setDirection({ x: 0, y: 1 });
+          // Soft drop speed
+          setSpeed(fastSpeed);
           break;
         case 'Escape':
           handlePause();
@@ -137,9 +151,16 @@ const Snake = () => {
           break;
       }
     };
+    const handleKeyUp = e => {
+      if (e.key === 'ArrowDown') setSpeed(normalSpeed);
+    };
     window.addEventListener('keydown', handleKeyDown, { passive: false });
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [direction, gameOver, paused]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [direction, gameOver, paused, moveSnake]);
 
   return (
     <GameContainer>
