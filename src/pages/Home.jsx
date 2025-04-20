@@ -4,9 +4,9 @@ import {
   FaPuzzlePiece, 
   FaGamepad, 
   FaDragon, 
-  FaSlotMachine, 
+  FaDice, 
   FaCalculator, 
-  FaPlayingCard 
+  FaRegCreditCard 
 } from 'react-icons/fa';
 import { Grid, Card, PageContainer } from '../styles/Layout';
 
@@ -42,7 +42,7 @@ const Home = () => {
       id: 'slot-machine',
       title: 'Slot Machine',
       description: 'A gambling machine simulation with spinning reels and winning combinations.',
-      icon: <FaSlotMachine />,
+      icon: <FaDice />,
       color: '#f44336',
       path: '/slot-machine'
     },
@@ -58,7 +58,7 @@ const Home = () => {
       id: 'doudizhu',
       title: 'Doudizhu',
       description: 'A popular Chinese card game for three players with one player against the other two.',
-      icon: <FaPlayingCard />,
+      icon: <FaRegCreditCard />,
       color: '#ff9800',
       path: '/doudizhu'
     }

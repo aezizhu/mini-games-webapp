@@ -11,7 +11,6 @@ export const AppContainer = styled.div`
 export const MainContent = styled.main`
   display: flex;
   flex: 1;
-  
   @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
     flex-direction: column;
   }
@@ -22,11 +21,9 @@ export const Content = styled.div`
   flex: 1;
   padding: ${({ theme }) => theme.spacing.lg};
   overflow-y: auto;
-  
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
     padding: ${({ theme }) => theme.spacing.md};
   }
-  
   @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
     padding: ${({ theme }) => theme.spacing.sm};
     padding-bottom: 80px; // Space for mobile navigation
@@ -45,12 +42,10 @@ export const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: ${({ theme }) => theme.spacing.lg};
-  
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: ${({ theme }) => theme.spacing.md};
   }
-  
   @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
     grid-template-columns: 1fr;
     gap: ${({ theme }) => theme.spacing.md};
@@ -73,17 +68,8 @@ export const Card = styled.div`
   border-radius: ${({ theme }) => theme.borderRadius.md};
   box-shadow: ${({ theme }) => theme.shadows.md};
   padding: ${({ theme }) => theme.spacing.lg};
-  transition: transform ${({ theme }) => theme.transitions.medium}, 
-              box-shadow ${({ theme }) => theme.transitions.medium};
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: ${({ theme }) => theme.shadows.lg};
-  }
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
-    padding: ${({ theme }) => theme.spacing.md};
-  }
+  transition: box-shadow ${({ theme }) => theme.transitions.short};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
 `;
 
 // Button component
@@ -104,20 +90,18 @@ export const Button = styled.button`
   align-items: center;
   justify-content: center;
   gap: ${({ theme }) => theme.spacing.xs};
-  
   &:hover {
     background-color: ${props => props.variant === 'secondary' 
       ? props.theme.colors.secondaryDark 
       : props.theme.colors.primaryDark};
   }
-  
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
 `;
 
-// Game container for consistent game layouts
+// Game common layout components
 export const GameContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -127,14 +111,8 @@ export const GameContainer = styled.div`
   padding: ${({ theme }) => theme.spacing.lg};
   max-width: 800px;
   margin: 0 auto;
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
-    padding: ${({ theme }) => theme.spacing.md};
-    gap: ${({ theme }) => theme.spacing.md};
-  }
 `;
 
-// Game board container
 export const GameBoard = styled.div`
   background-color: ${({ theme, $bgColor }) => $bgColor || theme.colors.surfaceLight};
   border-radius: ${({ theme }) => theme.borderRadius.md};
@@ -143,13 +121,8 @@ export const GameBoard = styled.div`
   width: 100%;
   max-width: ${props => props.$maxWidth || '600px'};
   aspect-ratio: ${props => props.$aspectRatio || '1 / 1'};
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
-    aspect-ratio: ${props => props.$mobileAspectRatio || props.$aspectRatio || '1 / 1'};
-  }
 `;
 
-// Game controls container
 export const GameControls = styled.div`
   display: flex;
   gap: ${({ theme }) => theme.spacing.md};
@@ -157,13 +130,8 @@ export const GameControls = styled.div`
   justify-content: center;
   width: 100%;
   max-width: ${props => props.$maxWidth || '600px'};
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
-    gap: ${({ theme }) => theme.spacing.sm};
-  }
 `;
 
-// Score display
 export const ScoreDisplay = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: ${({ theme }) => theme.borderRadius.md};
@@ -171,28 +139,20 @@ export const ScoreDisplay = styled.div`
   box-shadow: ${({ theme }) => theme.shadows.sm};
   text-align: center;
   min-width: 120px;
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
-    min-width: 100px;
-    padding: ${({ theme }) => theme.spacing.sm};
-  }
 `;
 
-// Score label
 export const ScoreLabel = styled.div`
   font-size: ${({ theme }) => theme.fontSizes.sm};
   color: ${({ theme }) => theme.colors.textLight};
   margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
-// Score value
 export const ScoreValue = styled.div`
   font-size: ${({ theme }) => theme.fontSizes.xl};
   font-weight: ${({ theme }) => theme.fontWeights.bold};
   color: ${({ theme, $color }) => $color || theme.colors.primary};
 `;
 
-// Modal overlay
 export const ModalOverlay = styled.div`
   position: fixed;
   top: 0;
@@ -207,7 +167,6 @@ export const ModalOverlay = styled.div`
   padding: ${({ theme }) => theme.spacing.md};
 `;
 
-// Modal content
 export const ModalContent = styled.div`
   background-color: ${({ theme }) => theme.colors.surface};
   border-radius: ${({ theme }) => theme.borderRadius.lg};
@@ -217,14 +176,9 @@ export const ModalContent = styled.div`
   width: ${props => props.$width || '500px'};
   max-height: 90vh;
   overflow-y: auto;
-  
-  @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
-    padding: ${({ theme }) => theme.spacing.lg};
-    width: 90%;
-  }
 `;
 
-// Section divider
+// Divider
 export const Divider = styled.hr`
   border: none;
   height: 1px;
@@ -238,7 +192,6 @@ export const Heading1 = styled.h1`
   font-weight: ${({ theme }) => theme.fontWeights.bold};
   margin-bottom: ${({ theme }) => theme.spacing.lg};
   color: ${({ theme, $color }) => $color || theme.colors.text};
-  
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
     font-size: ${({ theme }) => theme.fontSizes.xxl};
     margin-bottom: ${({ theme }) => theme.spacing.md};
@@ -250,7 +203,6 @@ export const Heading2 = styled.h2`
   font-weight: ${({ theme }) => theme.fontWeights.bold};
   margin-bottom: ${({ theme }) => theme.spacing.md};
   color: ${({ theme, $color }) => $color || theme.colors.text};
-  
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
     font-size: ${({ theme }) => theme.fontSizes.xl};
     margin-bottom: ${({ theme }) => theme.spacing.sm};
@@ -262,7 +214,6 @@ export const Heading3 = styled.h3`
   font-weight: ${({ theme }) => theme.fontWeights.semiBold};
   margin-bottom: ${({ theme }) => theme.spacing.sm};
   color: ${({ theme, $color }) => $color || theme.colors.text};
-  
   @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
     font-size: ${({ theme }) => theme.fontSizes.lg};
   }
@@ -276,6 +227,7 @@ export const Text = styled.p`
   line-height: 1.6;
 `;
 
+// Only export the components that are actually defined above
 export default {
   AppContainer,
   MainContent,

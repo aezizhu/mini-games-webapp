@@ -5,9 +5,9 @@ import {
   FaPuzzlePiece, 
   FaGamepad, 
   FaDragon, 
-  FaSlotMachine, 
+  FaDice, 
   FaCalculator, 
-  FaPlayingCard 
+  FaRegCreditCard 
 } from 'react-icons/fa';
 
 // Sidebar component with navigation links to different games
@@ -18,9 +18,9 @@ const Sidebar = () => {
     { path: '/2048', label: '2048', icon: <FaPuzzlePiece /> },
     { path: '/tetris', label: 'Tetris', icon: <FaGamepad /> },
     { path: '/snake', label: 'Snake', icon: <FaDragon /> },
-    { path: '/slot-machine', label: 'Slot Machine', icon: <FaSlotMachine /> },
+    { path: '/slot-machine', label: 'Slot Machine', icon: <FaDice /> },
     { path: '/24-points', label: '24 Points', icon: <FaCalculator /> },
-    { path: '/doudizhu', label: 'Doudizhu', icon: <FaPlayingCard /> },
+    { path: '/doudizhu', label: 'Doudizhu', icon: <FaRegCreditCard /> },
   ];
 
   return (

@@ -239,6 +239,14 @@ const Game2048 = () => {
   // Handle keyboard input
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if ([
+        'ArrowUp',
+        'ArrowDown',
+        'ArrowLeft',
+        'ArrowRight'
+      ].includes(e.key)) {
+        e.preventDefault();
+      }
       if (gameOver || gameWon) return;
       
       switch (e.key) {
@@ -259,7 +267,7 @@ const Game2048 = () => {
       }
     };
     
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
