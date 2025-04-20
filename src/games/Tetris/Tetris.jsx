@@ -142,13 +142,11 @@ const Tetris = () => {
       setPosition({ x: 3, y: 0 });
 
       // Check if the new piece would immediately collide (game over)
-      const isGameOver = checkCollision(
-        newGrid,
-        TETROMINOS[next.key],
-        { x: 3, y: 0 }
-      );
-
-      if (isGameOver) {
+      // Check if any of the top rows are filled, which would cause collision with new piece
+      const topRowsFilled = newGrid.slice(0, 2).some(row => row.some(cell => cell));
+      
+      if (topRowsFilled) {
+        console.log("Game over detected: pieces reached top of board");
         setGameOver(true);
         setDropTime(null);
       }
