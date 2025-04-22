@@ -303,6 +303,130 @@ function robotFindPlayableHand(hand, lastHand) {
       }
     }
   }
+  // Double straight (连对)
+  for (let len = 6; len <= ranks.length*2; len += 2) {
+    for (let i = 0; i <= ranks.length - len/2; i++) {
+      let ok = true;
+      let seqRanks = [];
+      for (let j = 0; j < len/2; j++) {
+        const r = ranks[i+j];
+        if (map[r] < 2) { ok = false; break; }
+        seqRanks.push(r);
+      }
+      // No 2 or joker
+      if (ok && seqRanks.every(r => getCardValue(r + SUITS[0]) < 12)) {
+        let seq = [];
+        for (const r of seqRanks) {
+          seq = seq.concat(hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r).slice(0,2));
+        }
+        if (seq.length === len) allCombos.push(seq);
+      }
+    }
+  }
+  // Plane (三顺)
+  for (let len = 6; len <= ranks.length*3; len += 3) {
+    for (let i = 0; i <= ranks.length - len/3; i++) {
+      let ok = true;
+      let seqRanks = [];
+      for (let j = 0; j < len/3; j++) {
+        const r = ranks[i+j];
+        if (map[r] < 3) { ok = false; break; }
+        seqRanks.push(r);
+      }
+      // No 2 or joker
+      if (ok && seqRanks.every(r => getCardValue(r + SUITS[0]) < 12)) {
+        let seq = [];
+        for (const r of seqRanks) {
+          seq = seq.concat(hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r).slice(0,3));
+        }
+        if (seq.length === len) allCombos.push(seq);
+      }
+    }
+  }
+  // Plane with single wings (三顺带单)
+  for (let len = 8; len <= ranks.length*4; len += 4) {
+    for (let i = 0; i <= ranks.length - len/4*2; i++) {
+      let tripleRanks = [];
+      let ok = true;
+      for (let j = 0; j < len/4*2; j++) {
+        const r = ranks[i+j];
+        if (map[r] < 3) { ok = false; break; }
+        tripleRanks.push(r);
+      }
+      if (ok && tripleRanks.every(r => getCardValue(r + SUITS[0]) < 12)) {
+        // Find single wings
+        const used = {};
+        tripleRanks.forEach(r => { used[r] = 3; });
+        const singles = [];
+        for (const r of ranks) {
+          let count = map[r] - (used[r] || 0);
+          for (let k = 0; k < count; k++) singles.push(hand.find(c => c.replace(/[^\dJQKA]+/, '') === r && !used[c]));
+        }
+        if (singles.length >= len/2) {
+          let seq = [];
+          for (const r of tripleRanks) {
+            seq = seq.concat(hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r).slice(0,3));
+          }
+          seq = seq.concat(singles.slice(0, len/2));
+          if (seq.length === len) allCombos.push(seq);
+        }
+      }
+    }
+  }
+  // Plane with pair wings (三顺带对)
+  for (let len = 10; len <= ranks.length*5; len += 5) {
+    for (let i = 0; i <= ranks.length - len/5*2; i++) {
+      let tripleRanks = [];
+      let ok = true;
+      for (let j = 0; j < len/5*2; j++) {
+        const r = ranks[i+j];
+        if (map[r] < 3) { ok = false; break; }
+        tripleRanks.push(r);
+      }
+      if (ok && tripleRanks.every(r => getCardValue(r + SUITS[0]) < 12)) {
+        // Find pair wings
+        const used = {};
+        tripleRanks.forEach(r => { used[r] = 3; });
+        const pairs = [];
+        for (const r of ranks) {
+          let count = map[r] - (used[r] || 0);
+          for (let k = 0; k < Math.floor(count/2); k++) {
+            pairs.push(hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r).slice(used[r]||0,used[r]?used[r]+2:2));
+          }
+        }
+        if (pairs.length >= len/5) {
+          let seq = [];
+          for (const r of tripleRanks) {
+            seq = seq.concat(hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r).slice(0,3));
+          }
+          seq = seq.concat([].concat(...pairs.slice(0,len/5)));
+          if (seq.length === len) allCombos.push(seq);
+        }
+      }
+    }
+  }
+  // Four with two singles
+  for (const r of ranks) {
+    if (map[r] === 4) {
+      const four = hand.filter(c => c.replace(/[^\dJQKA]+/, '') === r);
+      // Two singles
+      const singles = hand.filter(c => c.replace(/[^\dJQKA]+/, '') !== r);
+      for (let i = 0; i < singles.length; i++) {
+        for (let j = i+1; j < singles.length; j++) {
+          allCombos.push([...four, singles[i], singles[j]]);
+        }
+      }
+      // Two pairs
+      const pairRanks = ranks.filter(r2 => r2 !== r && map[r2] >= 2);
+      for (let i = 0; i < pairRanks.length; i++) {
+        for (let j = i+1; j < pairRanks.length; j++) {
+          const pair1 = hand.filter(c => c.replace(/[^\dJQKA]+/, '') === pairRanks[i]).slice(0,2);
+          const pair2 = hand.filter(c => c.replace(/[^\dJQKA]+/, '') === pairRanks[j]).slice(0,2);
+          allCombos.push([...four, ...pair1, ...pair2]);
+        }
+      }
+    }
+  }
   // Try all combos, prefer minimal that can beat lastHand
   let candidates = allCombos
     .map(c => ({ c, t: parseHandType(c) }))
