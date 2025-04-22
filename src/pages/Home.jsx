@@ -11,7 +11,8 @@ import {
   FaHeart,
   FaCircle,
   FaSpider,
-  FaChessKnight
+  FaChessKnight,
+  FaThLarge
 } from 'react-icons/fa';
 import { Grid, Card, PageContainer } from '../styles/Layout';
 
@@ -106,6 +107,14 @@ const Home = () => {
       icon: <FaChessKnight />,
       color: '#263238',
       path: '/chess'
+    },
+    {
+      id: 'mahjong-linkup',
+      title: 'Mahjong Linkup',
+      description: 'Classic Windows Mahjong Linkup. Match and clear all tiles!',
+      icon: <FaThLarge />,
+      color: '#bdb76b',
+      path: '/mahjong-linkup'
     }
   ];
 

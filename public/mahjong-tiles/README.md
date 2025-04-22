@@ -1,0 +1,1 @@
+Put tile image assets for Mahjong Linkup here. Example filenames: bamboo1.png, character1.png, circle1.png, east.png, red.png, etc. These will be used to render classic Windows-style mahjong tiles.
