@@ -1,17 +1,19 @@
 import React, { useRef, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { GameContainer } from '../../styles/Layout';
+import Matter from 'matter-js';
 
 // Table and game constants
 const WIDTH = 400;
 const HEIGHT = 600;
-const BALL_RADIUS = 10;
-const FLIPPER_LENGTH = 60;
-const FLIPPER_WIDTH = 12;
+const BALL_RADIUS = 12;
+const FLIPPER_LENGTH = 90;
+const FLIPPER_WIDTH = 18;
 const FLIPPER_Y = HEIGHT - 60;
-const FLIPPER_ANGLE = Math.PI / 6; // 30 deg
-const FLIPPER_SPEED = 0.25; // radians per frame
-const BUMPER_RADIUS = 22;
+const FLIPPER_OFFSET = 80;
+const FLIPPER_ANGLE_LIMIT = Math.PI / 5; // ~36 deg
+const FLIPPER_SPEED = 0.22; // radians per frame
+const BUMPER_RADIUS = 28;
 const BUMPER_POINTS = 100;
 
 const bumpers = [
@@ -35,28 +37,98 @@ const Controls = styled.div`
   margin: 12px 0;
 `;
 
-function clamp(val, min, max) {
-  return Math.max(min, Math.min(max, val));
-}
-
 function PinballGame() {
   const canvasRef = useRef(null);
+  const engine = useRef(null);
+  const renderReq = useRef(null);
+  const ballRef = useRef(null);
+  const flippersRef = useRef({ left: null, right: null });
   const [score, setScore] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [ball, setBall] = useState({ x: WIDTH / 2, y: HEIGHT - 80, vx: 0, vy: 0 });
-  const [flippers, setFlippers] = useState({ left: 0, right: 0 }); // angle offset
-  const [flipperState, setFlipperState] = useState({ left: false, right: false });
   const [lost, setLost] = useState(false);
+  const [flipperState, setFlipperState] = useState({ left: false, right: false });
+  const [initialized, setInitialized] = useState(false);
+  const bumperHit = useRef({});
 
-  // Launch the ball
+  // Initialize Matter.js world and objects
+  useEffect(() => {
+    engine.current = Matter.Engine.create();
+    const world = engine.current.world;
+    // Walls
+    const walls = [
+      Matter.Bodies.rectangle(WIDTH / 2, -8, WIDTH, 16, { isStatic: true }),
+      Matter.Bodies.rectangle(-8, HEIGHT / 2, 16, HEIGHT, { isStatic: true }),
+      Matter.Bodies.rectangle(WIDTH + 8, HEIGHT / 2, 16, HEIGHT, { isStatic: true }),
+      Matter.Bodies.rectangle(WIDTH / 2, HEIGHT + 8, WIDTH, 16, { isStatic: true, label: 'bottom' })
+    ];
+    Matter.World.add(world, walls);
+    // Bumpers
+    bumpers.forEach((b, i) => {
+      const bumper = Matter.Bodies.circle(b.x, b.y, BUMPER_RADIUS, {
+        isStatic: true,
+        label: 'bumper_' + i
+      });
+      Matter.World.add(world, bumper);
+    });
+    setInitialized(true);
+    return () => {
+      Matter.World.clear(world, false);
+      Matter.Engine.clear(engine.current);
+    };
+  }, []);
+
+  // Launch ball and flippers
   function launchBall() {
-    setBall({ x: WIDTH / 2, y: HEIGHT - 80, vx: (Math.random() - 0.5) * 2, vy: -7 });
-    setPlaying(true);
-    setLost(false);
+    const world = engine.current.world;
     setScore(0);
+    setLost(false);
+    setPlaying(true);
+    // Remove old ball and flippers
+    Matter.Composite.clear(world, false, true);
+    // Walls and bumpers already exist
+    // Ball
+    const ball = Matter.Bodies.circle(WIDTH / 2, HEIGHT - 100, BALL_RADIUS, {
+      restitution: 0.7,
+      friction: 0.005,
+      label: 'ball'
+    });
+    ballRef.current = ball;
+    Matter.World.add(world, ball);
+    // Flippers
+    const leftFlipper = Matter.Bodies.rectangle(
+      WIDTH / 2 - FLIPPER_OFFSET,
+      FLIPPER_Y,
+      FLIPPER_LENGTH,
+      FLIPPER_WIDTH,
+      { label: 'leftFlipper', chamfer: { radius: 8 }, collisionFilter: { group: -1 } }
+    );
+    const rightFlipper = Matter.Bodies.rectangle(
+      WIDTH / 2 + FLIPPER_OFFSET,
+      FLIPPER_Y,
+      FLIPPER_LENGTH,
+      FLIPPER_WIDTH,
+      { label: 'rightFlipper', chamfer: { radius: 8 }, collisionFilter: { group: -1 } }
+    );
+    // Flipper pivots (constraints)
+    const leftPivot = Matter.Constraint.create({
+      bodyA: leftFlipper,
+      pointB: { x: WIDTH / 2 - FLIPPER_OFFSET, y: FLIPPER_Y },
+      length: 0,
+      stiffness: 1
+    });
+    const rightPivot = Matter.Constraint.create({
+      bodyA: rightFlipper,
+      pointB: { x: WIDTH / 2 + FLIPPER_OFFSET, y: FLIPPER_Y },
+      length: 0,
+      stiffness: 1
+    });
+    Matter.World.add(world, [leftFlipper, rightFlipper, leftPivot, rightPivot]);
+    flippersRef.current = { left: leftFlipper, right: rightFlipper };
+    // Reset bumper hit state
+    bumperHit.current = {};
   }
 
-  // Flipper controls
+  // Flipper control
   useEffect(() => {
     function handleKey(e) {
       if (e.code === 'ArrowLeft') setFlipperState(s => ({ ...s, left: e.type === 'keydown' }));
@@ -69,89 +141,86 @@ function PinballGame() {
       window.removeEventListener('keydown', handleKey);
       window.removeEventListener('keyup', handleKey);
     };
-  }, [playing]);
+    // eslint-disable-next-line
+  }, [playing, initialized]);
 
-  // Main game loop
+  // Physics and animation loop
   useEffect(() => {
-    if (!playing) return;
-    let animation;
-    function loop() {
-      setBall(ball => {
-        let { x, y, vx, vy } = ball;
-        // Gravity
-        vy += 0.18;
-        // Move
-        x += vx;
-        y += vy;
-        // Wall collisions
-        if (x < BALL_RADIUS) { x = BALL_RADIUS; vx = -vx * 0.9; }
-        if (x > WIDTH - BALL_RADIUS) { x = WIDTH - BALL_RADIUS; vx = -vx * 0.9; }
-        if (y < BALL_RADIUS) { y = BALL_RADIUS; vy = -vy * 0.9; }
-        // Flipper collision (simple)
+    if (!initialized) return;
+    const world = engine.current.world;
+    function animate() {
+      // Flipper control logic
+      const left = flippersRef.current.left;
+      const right = flippersRef.current.right;
+      if (left && right) {
         // Left flipper
-        let leftFlipperX = WIDTH / 2 - 60;
-        let leftFlipperA = -FLIPPER_ANGLE + (flipperState.left ? FLIPPER_ANGLE : 0);
-        let lfX2 = leftFlipperX + FLIPPER_LENGTH * Math.cos(leftFlipperA);
-        let lfY2 = FLIPPER_Y + FLIPPER_LENGTH * Math.sin(leftFlipperA);
-        if (y > FLIPPER_Y - 8 && x > leftFlipperX - 8 && x < lfX2 + 8 && vy > 0) {
-          vy = -Math.abs(vy) * 0.85 - (flipperState.left ? 2.5 : 0);
-          vx += (flipperState.left ? -1.5 : -0.4);
-          y = FLIPPER_Y - BALL_RADIUS;
-        }
+        let leftAngle = flipperState.left ? -FLIPPER_ANGLE_LIMIT : 0;
+        Matter.Body.setAngle(left, leftAngle);
+        Matter.Body.setAngularVelocity(left, 0);
         // Right flipper
-        let rightFlipperX = WIDTH / 2 + 60;
-        let rightFlipperA = Math.PI + FLIPPER_ANGLE - (flipperState.right ? FLIPPER_ANGLE : 0);
-        let rfX2 = rightFlipperX + FLIPPER_LENGTH * Math.cos(rightFlipperA);
-        let rfY2 = FLIPPER_Y + FLIPPER_LENGTH * Math.sin(rightFlipperA);
-        if (y > FLIPPER_Y - 8 && x < rightFlipperX + 8 && x > rfX2 - 8 && vy > 0) {
-          vy = -Math.abs(vy) * 0.85 - (flipperState.right ? 2.5 : 0);
-          vx += (flipperState.right ? 1.5 : 0.4);
-          y = FLIPPER_Y - BALL_RADIUS;
-        }
-        // Bumper collisions
-        bumpers.forEach(({ x: bx, y: by }) => {
-          let dx = x - bx, dy = y - by;
-          let dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < BALL_RADIUS + BUMPER_RADIUS) {
-            let angle = Math.atan2(dy, dx);
-            x = bx + Math.cos(angle) * (BALL_RADIUS + BUMPER_RADIUS);
-            y = by + Math.sin(angle) * (BALL_RADIUS + BUMPER_RADIUS);
-            vx += Math.cos(angle) * 2;
-            vy += Math.sin(angle) * 2;
-            setScore(s => s + BUMPER_POINTS);
+        let rightAngle = flipperState.right ? FLIPPER_ANGLE_LIMIT : 0;
+        Matter.Body.setAngle(right, Math.PI - rightAngle);
+        Matter.Body.setAngularVelocity(right, 0);
+      }
+      Matter.Engine.update(engine.current, 1000 / 60);
+      draw();
+      renderReq.current = requestAnimationFrame(animate);
+    }
+    if (playing) {
+      renderReq.current = requestAnimationFrame(animate);
+    }
+    return () => cancelAnimationFrame(renderReq.current);
+    // eslint-disable-next-line
+  }, [playing, flipperState, initialized]);
+
+  // Collision events
+  useEffect(() => {
+    if (!initialized) return;
+    const world = engine.current.world;
+    const ball = ballRef.current;
+    function handleCollision(event) {
+      event.pairs.forEach(pair => {
+        const { bodyA, bodyB } = pair;
+        // Ball hits bumper
+        [bodyA, bodyB].forEach((b, idx) => {
+          if (b.label && b.label.startsWith('bumper_')) {
+            const bumperIdx = b.label.split('_')[1];
+            if (!bumperHit.current[bumperIdx]) {
+              bumperHit.current[bumperIdx] = true;
+              setScore(s => s + BUMPER_POINTS);
+              setTimeout(() => { bumperHit.current[bumperIdx] = false; }, 400);
+            }
           }
         });
-        // Lose condition
-        if (y > HEIGHT + BALL_RADIUS) {
+        // Ball falls out
+        if ((bodyA.label === 'ball' && bodyB.label === 'bottom') || (bodyB.label === 'ball' && bodyA.label === 'bottom')) {
           setPlaying(false);
           setLost(true);
         }
-        // Clamp
-        x = clamp(x, BALL_RADIUS, WIDTH - BALL_RADIUS);
-        y = clamp(y, BALL_RADIUS, HEIGHT + BALL_RADIUS);
-        return { x, y, vx: clamp(vx, -10, 10), vy: clamp(vy, -12, 12) };
       });
-      animation = requestAnimationFrame(loop);
     }
-    animation = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animation);
-  }, [playing, flipperState]);
+    Matter.Events.on(engine.current, 'collisionStart', handleCollision);
+    return () => {
+      Matter.Events.off(engine.current, 'collisionStart', handleCollision);
+    };
+    // eslint-disable-next-line
+  }, [initialized]);
 
-  // Draw everything
-  useEffect(() => {
+  // Canvas rendering
+  function draw() {
     const ctx = canvasRef.current.getContext('2d');
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
-    // Table
+    // Table border
     ctx.save();
     ctx.strokeStyle = '#444';
     ctx.lineWidth = 7;
     ctx.strokeRect(0, 0, WIDTH, HEIGHT);
     ctx.restore();
     // Bumpers
-    bumpers.forEach(({ x, y }) => {
+    bumpers.forEach((b, i) => {
       ctx.save();
       ctx.beginPath();
-      ctx.arc(x, y, BUMPER_RADIUS, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, BUMPER_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = '#ffeb3b';
       ctx.shadowColor = '#fbc02d';
       ctx.shadowBlur = 18;
@@ -159,29 +228,26 @@ function PinballGame() {
       ctx.restore();
     });
     // Flippers
-    // Left
-    ctx.save();
-    ctx.translate(WIDTH / 2 - 60, FLIPPER_Y);
-    ctx.rotate(-FLIPPER_ANGLE + (flipperState.left ? FLIPPER_ANGLE : 0));
-    ctx.fillStyle = '#2196f3';
-    ctx.fillRect(0, -FLIPPER_WIDTH / 2, FLIPPER_LENGTH, FLIPPER_WIDTH);
-    ctx.restore();
-    // Right
-    ctx.save();
-    ctx.translate(WIDTH / 2 + 60, FLIPPER_Y);
-    ctx.rotate(Math.PI + FLIPPER_ANGLE - (flipperState.right ? FLIPPER_ANGLE : 0));
-    ctx.fillStyle = '#e91e63';
-    ctx.fillRect(0, -FLIPPER_WIDTH / 2, FLIPPER_LENGTH, FLIPPER_WIDTH);
-    ctx.restore();
+    const left = flippersRef.current.left;
+    const right = flippersRef.current.right;
+    if (left) {
+      drawFlipper(ctx, left);
+    }
+    if (right) {
+      drawFlipper(ctx, right);
+    }
     // Ball
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.shadowColor = '#aaa';
-    ctx.shadowBlur = 12;
-    ctx.fill();
-    ctx.restore();
+    const ball = ballRef.current;
+    if (ball) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(ball.position.x, ball.position.y, BALL_RADIUS, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = '#aaa';
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.restore();
+    }
     // Score
     ctx.save();
     ctx.font = 'bold 22px monospace';
@@ -197,11 +263,21 @@ function PinballGame() {
       ctx.fillText('Game Over', WIDTH / 2, HEIGHT / 2);
       ctx.restore();
     }
-  }, [ball, flipperState, score, lost]);
+  }
+
+  // Draw flipper helper
+  function drawFlipper(ctx, flipper) {
+    ctx.save();
+    ctx.translate(flipper.position.x, flipper.position.y);
+    ctx.rotate(flipper.angle);
+    ctx.fillStyle = flipper.label === 'leftFlipper' ? '#2196f3' : '#e91e63';
+    ctx.fillRect(-FLIPPER_LENGTH / 2, -FLIPPER_WIDTH / 2, FLIPPER_LENGTH, FLIPPER_WIDTH);
+    ctx.restore();
+  }
 
   return (
     <GameContainer>
-      <h2>3D Pinball (Mini)</h2>
+      <h2>3D Pinball (Matter.js)</h2>
       <PinballCanvas ref={canvasRef} width={WIDTH} height={HEIGHT} />
       <Controls>
         <button onClick={launchBall} disabled={playing}>Launch Ball</button>
