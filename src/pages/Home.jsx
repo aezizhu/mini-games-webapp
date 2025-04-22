@@ -8,7 +8,8 @@ import {
   FaCalculator, 
   FaRegCreditCard, 
   FaBomb, 
-  FaHeart 
+  FaHeart,
+  FaCircle
 } from 'react-icons/fa';
 import { Grid, Card, PageContainer } from '../styles/Layout';
 
@@ -79,6 +80,14 @@ const Home = () => {
       icon: <FaHeart />,
       color: '#e53935',
       path: '/hearts'
+    },
+    {
+      id: 'pinball',
+      title: '3D Pinball',
+      description: 'Classic pinball game. Use flippers to keep the ball in play and score points!',
+      icon: <FaCircle />, // Use a pinball-like icon
+      color: '#1976d2',
+      path: '/pinball'
     }
   ];
 
