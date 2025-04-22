@@ -21,6 +21,7 @@ import Doudizhu from './games/Doudizhu/Doudizhu.jsx';
 import Minesweeper from './games/Minesweeper/Minesweeper.jsx';
 import Hearts from './games/Hearts/Hearts.jsx';
 import PinballGame from './games/Pinball/Pinball.jsx';
+import SpiderSolitaire from './games/Spider/SpiderSolitaire.jsx';
 const Help = () => <div>Help & Instructions (Coming Soon)</div>;
 
 // Main App component
@@ -47,6 +48,7 @@ function App() {
                     <Route path="/minesweeper" element={<Minesweeper />} />
                     <Route path="/hearts" element={<Hearts />} />
                     <Route path="/pinball" element={<PinballGame />} />
+                    <Route path="/spider" element={<SpiderSolitaire />} />
                     <Route path="/help" element={<Help />} />
                   </Routes>
                 </Content>

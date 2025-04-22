@@ -9,7 +9,8 @@ import {
   FaRegCreditCard, 
   FaBomb, 
   FaHeart,
-  FaCircle
+  FaCircle,
+  FaSpider
 } from 'react-icons/fa';
 import { Grid, Card, PageContainer } from '../styles/Layout';
 
@@ -88,6 +89,14 @@ const Home = () => {
       icon: <FaCircle />, // Use a pinball-like icon
       color: '#1976d2',
       path: '/pinball'
+    },
+    {
+      id: 'spider',
+      title: 'Spider Solitaire',
+      description: 'Classic Microsoft Spider Solitaire. Arrange cards in descending order to clear suits!',
+      icon: <FaSpider />,
+      color: '#4e342e',
+      path: '/spider'
     }
   ];
 
