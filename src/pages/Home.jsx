@@ -10,7 +10,8 @@ import {
   FaBomb, 
   FaHeart,
   FaCircle,
-  FaSpider
+  FaSpider,
+  FaChessKnight
 } from 'react-icons/fa';
 import { Grid, Card, PageContainer } from '../styles/Layout';
 
@@ -97,6 +98,14 @@ const Home = () => {
       icon: <FaSpider />,
       color: '#4e342e',
       path: '/spider'
+    },
+    {
+      id: 'chess',
+      title: 'Chess',
+      description: 'Classic Windows Chess. Play against the computer or a friend!',
+      icon: <FaChessKnight />,
+      color: '#263238',
+      path: '/chess'
     }
   ];
 

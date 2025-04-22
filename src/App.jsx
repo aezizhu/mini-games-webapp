@@ -22,6 +22,7 @@ import Minesweeper from './games/Minesweeper/Minesweeper.jsx';
 import Hearts from './games/Hearts/Hearts.jsx';
 import PinballGame from './games/Pinball/Pinball.jsx';
 import SpiderSolitaire from './games/Spider/SpiderSolitaire.jsx';
+import Chess from './games/Chess/Chess.jsx'; // Import the Chess component
 const Help = () => <div>Help & Instructions (Coming Soon)</div>;
 
 // Main App component
@@ -49,6 +50,7 @@ function App() {
                     <Route path="/hearts" element={<Hearts />} />
                     <Route path="/pinball" element={<PinballGame />} />
                     <Route path="/spider" element={<SpiderSolitaire />} />
+                    <Route path="/chess" element={<Chess />} /> // Register the Chess component in the route table
                     <Route path="/help" element={<Help />} />
                   </Routes>
                 </Content>
