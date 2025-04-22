@@ -336,6 +336,7 @@ const robotPlay = (idx, curHands, curPlayed, curLastHand) => {
     setHands(newHands);
     setPlayed(newPlayed);
     setLastHand(parseHandType(found));
+    setLastPlayer(idx);
     setCurrent((idx + 1) % 3);
     setTimeout(() => {
       if ((idx + 1) % 3 !== 0) robotPlay((idx + 1) % 3, newHands, newPlayed, parseHandType(found));
@@ -345,9 +346,15 @@ const robotPlay = (idx, curHands, curPlayed, curLastHand) => {
     const newPlayed = [...curPlayed];
     newPlayed[idx] = [];
     setPlayed(newPlayed);
-    setCurrent((idx + 1) % 3);
+    const nextIdx = (idx + 1) % 3;
+    // If next turn cycles back to lastPlayer, clear lastHand (new round)
+    if (lastPlayer !== null && nextIdx === lastPlayer) {
+      setLastHand(null);
+      setLastPlayer(null);
+    }
+    setCurrent(nextIdx);
     setTimeout(() => {
-      if ((idx + 1) % 3 !== 0) robotPlay((idx + 1) % 3, curHands, newPlayed, curLastHand);
+      if (nextIdx !== 0) robotPlay(nextIdx, curHands, newPlayed, lastHand);
     }, 900);
   }
 };
@@ -363,6 +370,7 @@ const Doudizhu = () => {
   const [history, setHistory] = useState([[], [], []]); // [[cards], [cards], [cards]]
   const [played, setPlayed] = useState([[], [], []]); // last played for each
   const [lastHand, setLastHand] = useState(null); // last valid played hand
+  const [lastPlayer, setLastPlayer] = useState(null); // whose hand is current reference
   const [callScores, setCallScores] = useState([null, null, null]); // bids for landlord
 
   // Start game after selecting difficulty
@@ -382,6 +390,7 @@ const Doudizhu = () => {
     setSelected([]);
     setPlayed([[], [], []]);
     setLastHand(null);
+    setLastPlayer(null);
   };
 
   // Bidding logic
@@ -430,8 +439,11 @@ const Doudizhu = () => {
 
   // Play a card (with rule check)
   const play = () => {
+    console.log('[Doudizhu] play invoked', { selected, current, lastHand });
+    console.log('[Doudizhu] selected cards:', selected);
     if (selected.length === 0) return;
     const handType = parseHandType(selected);
+    console.log('[Doudizhu] parsed handType:', handType);
     if (!handType) {
       alert('Invalid hand type!');
       return;
@@ -453,6 +465,7 @@ const Doudizhu = () => {
     setSelected([]);
     setPlayed(newPlayed);
     setLastHand(handType);
+    setLastPlayer(0);
     setCurrent(1);
     setTimeout(() => robotPlay(1, newHands, newPlayed, handType), 900);
   };
@@ -460,8 +473,14 @@ const Doudizhu = () => {
   // Pass (skip turn)
   const pass = () => {
     setPlayed(p => { const np = [...p]; np[0] = []; return np; });
-    setCurrent(1);
-    setTimeout(() => robotPlay(1, hands, played, lastHand), 900);
+    const nextIdx = 1;
+    // If next turn cycles back to lastPlayer, clear lastHand (new round)
+    if (lastPlayer !== null && nextIdx === lastPlayer) {
+      setLastHand(null);
+      setLastPlayer(null);
+    }
+    setCurrent(nextIdx);
+    setTimeout(() => robotPlay(nextIdx, hands, played, lastHand), 900);
   };
 
   // Check win
@@ -485,6 +504,7 @@ const Doudizhu = () => {
     setCurrent(0);
     setPlayed([[], [], []]);
     setLastHand(null);
+    setLastPlayer(null);
   };
 
   // Automatic robot move when it's a robot's turn
