@@ -1,0 +1,1 @@
+Put Street Fighter II stage backgrounds here. Example filenames: japan.png, usa.png, china.png, brazil.png, etc. Use 600x240 px or similar. These will be used for arcade-style stage backgrounds.

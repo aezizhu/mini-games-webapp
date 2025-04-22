@@ -1,0 +1,13 @@
+Put Street Fighter II pixel art character and effect sprites here.
+
+Recommended structure:
+- ryu_idle.png, ryu_attack.png, ryu_special1.png, ryu_special2.png, ...
+- ken_idle.png, ken_attack.png, ken_special1.png, ...
+- chunli_idle.png, chunli_kick.png, chunli_special1.png, ...
+- ...
+- fireball.png, sonicboom.png, yoga_fire.png, etc.
+
+Sprite size: 48x64 px or 64x64 px per frame. Transparent PNG recommended.
+For multi-frame animations, use numbered files or sprite sheets (see README for integration details).
+
+These will be used for pixel art rendering of characters and special moves.

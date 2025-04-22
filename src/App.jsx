@@ -24,6 +24,7 @@ import PinballGame from './games/Pinball/Pinball.jsx';
 import SpiderSolitaire from './games/Spider/SpiderSolitaire.jsx';
 import Chess from './games/Chess/Chess.jsx';
 import MahjongLinkup from './games/MahjongLinkup/MahjongLinkup'; // Import the MahjongLinkup component
+import StreetFighterII from './games/StreetFighterII/StreetFighterII.jsx'; // Import the StreetFighterII component
 const Help = () => <div>Help & Instructions (Coming Soon)</div>;
 
 // Main App component
@@ -53,6 +54,7 @@ function App() {
                     <Route path="/spider" element={<SpiderSolitaire />} />
                     <Route path="/chess" element={<Chess />} />
                     <Route path="/mahjong-linkup" element={<MahjongLinkup />} /> // Register the MahjongLinkup component in the route table
+                    <Route path="/street-fighter-ii" element={<StreetFighterII />} /> // Register the StreetFighterII component in the route table
                     <Route path="/help" element={<Help />} />
                   </Routes>
                 </Content>

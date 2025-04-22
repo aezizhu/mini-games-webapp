@@ -12,7 +12,8 @@ import {
   FaCircle,
   FaSpider,
   FaChessKnight,
-  FaThLarge
+  FaThLarge,
+  FaFistRaised
 } from 'react-icons/fa';
 import { Grid, Card, PageContainer } from '../styles/Layout';
 
@@ -115,6 +116,14 @@ const Home = () => {
       icon: <FaThLarge />,
       color: '#bdb76b',
       path: '/mahjong-linkup'
+    },
+    {
+      id: 'street-fighter-ii',
+      title: 'Street Fighter II',
+      description: 'Classic fighting game. Play as Ryu or Ken in a 1v1 battle!',
+      icon: <FaFistRaised />,
+      color: '#b71c1c',
+      path: '/street-fighter-ii'
     }
   ];
 

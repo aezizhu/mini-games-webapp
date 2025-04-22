@@ -1,0 +1,1 @@
+Put Street Fighter II sound assets here. Example filenames: hadouken.wav, shoryuken.wav, punch.wav, kick.wav, block.wav, bgm_japan.mp3, bgm_usa.mp3, bgm_china.mp3, etc. These will be used for special moves, attacks, blocks, and background music.
