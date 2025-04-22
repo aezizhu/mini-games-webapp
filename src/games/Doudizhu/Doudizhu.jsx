@@ -387,8 +387,13 @@ const Doudizhu = () => {
   // Bidding logic
   const userCall = score => {
     const cs = [...callScores]; cs[0] = score; setCallScores(cs);
-    if (1 < 3) setTimeout(() => nextCall(1, cs), 300);
-    else finishCall(cs);
+    // If user bids 3, end bidding immediately
+    if (score === 3) {
+      finishCall(cs);
+    } else {
+      // Continue bidding with next player
+      nextCall(1, cs);
+    }
   };
   const nextCall = (idx, cs) => {
     setCurrent(idx);
@@ -397,9 +402,14 @@ const Doudizhu = () => {
   const robotCall = (idx, cs) => {
     const score = Math.floor(Math.random() * 4); // 0=Pass,1-3
     const ncs = [...cs]; ncs[idx] = score; setCallScores(ncs);
-    if (idx < 2) return nextCall(idx + 1, ncs);
-    finishCall(ncs);
+    // If someone bids 3 or last bidder, end bidding
+    if (score === 3 || idx === 2) {
+      finishCall(ncs);
+    } else {
+      nextCall(idx + 1, ncs);
+    }
   };
+
   const finishCall = cs => {
     console.log('[Doudizhu] finishCall bids:', cs);
     const max = Math.max(...cs);
