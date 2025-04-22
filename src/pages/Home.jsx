@@ -6,7 +6,9 @@ import {
   FaDragon, 
   FaDice, 
   FaCalculator, 
-  FaRegCreditCard 
+  FaRegCreditCard, 
+  FaBomb, 
+  FaHeart 
 } from 'react-icons/fa';
 import { Grid, Card, PageContainer } from '../styles/Layout';
 
@@ -61,6 +63,22 @@ const Home = () => {
       icon: <FaRegCreditCard />,
       color: '#ff9800',
       path: '/doudizhu'
+    },
+    {
+      id: 'minesweeper',
+      title: 'Minesweeper',
+      description: 'Uncover all safe cells and avoid the mines in this classic puzzle game.',
+      icon: <FaBomb />,
+      color: '#607d8b',
+      path: '/minesweeper'
+    },
+    {
+      id: 'hearts',
+      title: 'Hearts',
+      description: 'Microsoft classic card game. Avoid hearts and the Queen of Spades!',
+      icon: <FaHeart />,
+      color: '#e53935',
+      path: '/hearts'
     }
   ];
 
