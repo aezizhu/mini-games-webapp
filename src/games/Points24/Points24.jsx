@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { GameContainer } from '../../styles/Layout';
+import canSolve24 from './solver24';
 
 // Generate 4 random numbers from 1 to 13 (like playing cards)
-function generateNumbers() {
-  return Array.from({ length: 4 }, () => Math.floor(Math.random() * 13) + 1);
+function generateNumbers(solvable = null) {
+  // If solvable is true, only return numbers with a solution
+  // If solvable is false, only return numbers with no solution
+  // If solvable is null, return any numbers
+  let nums;
+  while (true) {
+    nums = Array.from({ length: 4 }, () => Math.floor(Math.random() * 13) + 1);
+    const hasSolution = canSolve24(nums);
+    if (solvable === null || hasSolution === solvable) return nums;
+  }
 }
 
 // Styled components
@@ -35,6 +44,7 @@ const Points24 = () => {
   const [expression, setExpression] = useState('');
   const [result, setResult] = useState('');
   const [correct, setCorrect] = useState(false);
+  const [hasSolution, setHasSolution] = useState(canSolve24(numbers));
 
   // Check if the user's expression is valid and equals 24
   const checkResult = () => {
@@ -62,7 +72,9 @@ const Points24 = () => {
         setCorrect(true);
         // Automatically start a new round after 1.2 seconds
         setTimeout(() => {
-          setNumbers(generateNumbers());
+          const newNums = generateNumbers();
+          setNumbers(newNums);
+          setHasSolution(canSolve24(newNums));
           setExpression('');
           setResult('');
           setCorrect(false);
@@ -77,8 +89,10 @@ const Points24 = () => {
     }
   };
 
-  const reset = () => {
-    setNumbers(generateNumbers());
+  const reset = (solvable = null) => {
+    const newNums = generateNumbers(solvable);
+    setNumbers(newNums);
+    setHasSolution(canSolve24(newNums));
     setExpression('');
     setResult('');
     setCorrect(false);
@@ -101,9 +115,13 @@ const Points24 = () => {
           disabled={correct}
         />
         <button onClick={checkResult} disabled={correct}>Submit</button>
-        <button onClick={reset} style={{ marginLeft: 12 }}>New</button>
+        <button onClick={() => reset(null)} style={{ marginLeft: 12 }}>New</button>
+        <button onClick={() => reset(false)} style={{ marginLeft: 12 }}>No Solution</button>
       </div>
       {result && <Result $correct={correct}>{result}</Result>}
+      <div style={{ marginTop: 8, color: hasSolution ? 'green' : 'red', fontSize: 14 }}>
+        {hasSolution ? 'This puzzle has a solution.' : 'No solution exists for this puzzle.'}
+      </div>
       <div style={{ marginTop: 14, color: '#888', fontSize: 14 }}>
         Use +, -, *, / and parentheses. Each number must be used exactly once.<br/>
         Example: (8/(3-1))*6
