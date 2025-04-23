@@ -245,4 +245,271 @@ function compareHands(last, next) {
   return next.value > last.value;
 }
 
-// ... rest of your code ...
+// The main Doudizhu component
+function Doudizhu() {
+  const [deck, setDeck] = useState([]);
+  const [playerHands, setPlayerHands] = useState([[], [], []]);
+  const [bottomCards, setBottomCards] = useState([]);
+  const [landlord, setLandlord] = useState(0); // 0 = player, 1 and 2 are AI
+  const [currentPlayer, setCurrentPlayer] = useState(0);
+  const [selectedCards, setSelectedCards] = useState([]);
+  const [playedCards, setPlayedCards] = useState([null, null, null]);
+  const [lastPlayedHand, setLastPlayedHand] = useState(null);
+  const [lastPlayer, setLastPlayer] = useState(null);
+  const [gamePhase, setGamePhase] = useState('bidding'); // bidding, playing, finished
+  const [difficulty, setDifficulty] = useState('normal');
+  const [gameResult, setGameResult] = useState(null);
+
+  // Initialize game
+  useEffect(() => {
+    newGame();
+  }, []);
+
+  // Start new game
+  const newGame = () => {
+    const newDeck = shuffle(createDeck());
+    
+    // Deal cards (17 each)
+    const hands = [
+      newDeck.slice(0, 17),
+      newDeck.slice(17, 34),
+      newDeck.slice(34, 51)
+    ];
+    
+    // Sort hands by card value
+    hands.forEach(hand => {
+      hand.sort((a, b) => getCardValue(a) - getCardValue(b));
+    });
+    
+    // Bottom 3 cards
+    const bottom = newDeck.slice(51);
+    
+    setDeck(newDeck);
+    setPlayerHands(hands);
+    setBottomCards(bottom);
+    setLandlord(0);
+    setCurrentPlayer(0);
+    setSelectedCards([]);
+    setPlayedCards([null, null, null]);
+    setLastPlayedHand(null);
+    setLastPlayer(null);
+    setGamePhase('bidding');
+    setGameResult(null);
+  };
+
+  // Select or deselect a card
+  const toggleCardSelection = (cardIndex) => {
+    if (gamePhase !== 'playing' || currentPlayer !== 0) return;
+    
+    const card = playerHands[0][cardIndex];
+    if (selectedCards.includes(card)) {
+      setSelectedCards(selectedCards.filter(c => c !== card));
+    } else {
+      setSelectedCards([...selectedCards, card]);
+    }
+  };
+
+  // Play selected cards
+  const playCards = () => {
+    if (selectedCards.length === 0) return;
+    
+    const handType = parseHandType(selectedCards);
+    if (!handType) {
+      alert("Invalid card combination!");
+      return;
+    }
+    
+    if (lastPlayedHand && lastPlayer !== 0 && !compareHands(lastPlayedHand, handType)) {
+      alert("These cards can't beat the last play!");
+      return;
+    }
+    
+    // Remove cards from hand
+    const newHands = [...playerHands];
+    selectedCards.forEach(card => {
+      const index = newHands[0].indexOf(card);
+      if (index > -1) {
+        newHands[0].splice(index, 1);
+      }
+    });
+    
+    // Update game state
+    setPlayerHands(newHands);
+    const newPlayedCards = [...playedCards];
+    newPlayedCards[0] = selectedCards;
+    setPlayedCards(newPlayedCards);
+    setSelectedCards([]);
+    setLastPlayedHand(handType);
+    setLastPlayer(0);
+    
+    // Check if player has won
+    if (newHands[0].length === 0) {
+      setGamePhase('finished');
+      setGameResult(0 === landlord ? 'landlord' : 'farmers');
+      return;
+    }
+    
+    // AI turns
+    setCurrentPlayer(1);
+    setTimeout(() => {
+      aiTurn(1, newHands, handType, newPlayedCards);
+    }, 1000);
+  };
+
+  // AI turn (simplified)
+  const aiTurn = (aiPlayer, hands, lastHand, played) => {
+    // In a real implementation, this would have complex AI logic
+    // Here we'll just pass if we're not the landlord, or play a simple hand
+    const newPlayedCards = [...played];
+    const aiHand = hands[aiPlayer];
+    
+    // Simplified AI - just play the first valid hand
+    if (aiHand.length > 0) {
+      // In a real game, would check available plays
+      // Here we'll just pass
+      newPlayedCards[aiPlayer] = null;
+    }
+    
+    setPlayedCards(newPlayedCards);
+    
+    // Move to next player or back to player
+    const nextPlayer = (aiPlayer + 1) % 3;
+    setCurrentPlayer(nextPlayer);
+    
+    if (nextPlayer === 0) {
+      // Back to human player
+    } else {
+      // Continue AI turn
+      setTimeout(() => {
+        aiTurn(nextPlayer, hands, lastHand, newPlayedCards);
+      }, 1000);
+    }
+  };
+
+  // Pass turn
+  const passTurn = () => {
+    if (gamePhase !== 'playing' || currentPlayer !== 0 || lastPlayer === 0) return;
+    
+    setSelectedCards([]);
+    const newPlayedCards = [...playedCards];
+    newPlayedCards[0] = null;
+    setPlayedCards(newPlayedCards);
+    
+    setCurrentPlayer(1);
+    setTimeout(() => {
+      aiTurn(1, playerHands, lastPlayedHand, newPlayedCards);
+    }, 1000);
+  };
+
+  // Start game as landlord
+  const startGame = () => {
+    // In a real game, bidding would determine landlord
+    // Here we'll just make player the landlord
+    const newHands = [...playerHands];
+    newHands[0] = [...newHands[0], ...bottomCards];
+    newHands[0].sort((a, b) => getCardValue(a) - getCardValue(b));
+    
+    setPlayerHands(newHands);
+    setGamePhase('playing');
+  };
+
+  return (
+    <GameContainer>
+      <h1>Doudizhu (Chinese Poker)</h1>
+      
+      {gamePhase === 'bidding' && (
+        <div>
+          <h2>Bidding Phase</h2>
+          <DifficultySelect>
+            {DIFFICULTIES.map(option => (
+              <button 
+                key={option.value}
+                onClick={() => setDifficulty(option.value)}
+                style={{fontWeight: difficulty === option.value ? 'bold' : 'normal'}}
+              >
+                {option.label}
+              </button>
+            ))}
+          </DifficultySelect>
+          <button onClick={startGame}>Start as Landlord</button>
+        </div>
+      )}
+      
+      {gamePhase === 'playing' && (
+        <Table>
+          <PlayerRow>
+            <PlayerArea>
+              <PlayerLabel>Robot A {landlord === 1 && <LandlordMark>👑</LandlordMark>}</PlayerLabel>
+              <Hand>
+                {playerHands[1].map((_, i) => (
+                  <CardBack key={i}>?</CardBack>
+                ))}
+              </Hand>
+              <PlayedCards>
+                {playedCards[1] && playedCards[1].join(' ')}
+              </PlayedCards>
+            </PlayerArea>
+            
+            <PlayerArea>
+              <PlayerLabel>Robot B {landlord === 2 && <LandlordMark>👑</LandlordMark>}</PlayerLabel>
+              <Hand>
+                {playerHands[2].map((_, i) => (
+                  <CardBack key={i}>?</CardBack>
+                ))}
+              </Hand>
+              <PlayedCards>
+                {playedCards[2] && playedCards[2].join(' ')}
+              </PlayedCards>
+            </PlayerArea>
+          </PlayerRow>
+          
+          <CenterArea>
+            {gamePhase === 'bidding' && (
+              <BottomCards>
+                {bottomCards.map((card, i) => (
+                  <Card key={i}>{card}</Card>
+                ))}
+              </BottomCards>
+            )}
+            {currentPlayer === 0 ? <div>Your turn</div> : <div>Waiting for Robot {currentPlayer === 1 ? 'A' : 'B'}</div>}
+          </CenterArea>
+          
+          <PlayerArea>
+            <PlayerLabel>You {landlord === 0 && <LandlordMark>👑</LandlordMark>}</PlayerLabel>
+            <PlayedCards>
+              {playedCards[0] && playedCards[0].join(' ')}
+            </PlayedCards>
+            <Hand>
+              {playerHands[0].map((card, i) => (
+                <Card 
+                  key={i}
+                  onClick={() => toggleCardSelection(i)}
+                  style={{
+                    transform: selectedCards.includes(card) ? 'translateY(-10px)' : 'none',
+                    border: selectedCards.includes(card) ? '2px solid blue' : '1px solid #aaa'
+                  }}
+                >
+                  {card}
+                </Card>
+              ))}
+            </Hand>
+            <ButtonsWrapper>
+              <button onClick={playCards} disabled={selectedCards.length === 0}>Play Cards</button>
+              <button onClick={passTurn} disabled={lastPlayer === 0 || lastPlayer === null}>Pass</button>
+            </ButtonsWrapper>
+          </PlayerArea>
+        </Table>
+      )}
+      
+      {gamePhase === 'finished' && (
+        <div>
+          <h2>Game Over</h2>
+          <p>{gameResult === 'landlord' ? 'Landlord wins!' : 'Farmers win!'}</p>
+          <button onClick={newGame}>New Game</button>
+        </div>
+      )}
+    </GameContainer>
+  );
+}
+
+export default Doudizhu;
