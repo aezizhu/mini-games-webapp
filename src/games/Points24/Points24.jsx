@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { GameContainer } from '../../styles/Layout';
 import canSolve24 from './solver24';
@@ -72,6 +72,11 @@ const Points24 = () => {
   const [hasSolution, setHasSolution] = useState(canSolve24(numbers));
   const [noSolutionMsg, setNoSolutionMsg] = useState(''); // Feedback for No Solution button
 
+  // Always keep hasSolution in sync with numbers
+  useEffect(() => {
+    setHasSolution(canSolve24(numbers));
+  }, [numbers]);
+
   // Check if the user's expression is valid and equals 24
   const checkResult = () => {
     setNoSolutionMsg(''); // Clear no solution feedback on new answer
@@ -116,7 +121,6 @@ const Points24 = () => {
         setTimeout(() => {
           const newNums = generateNumbers();
           setNumbers(newNums);
-          setHasSolution(canSolve24(newNums));
           setExpression('');
           setResult('');
           setCorrect(false);
@@ -135,11 +139,7 @@ const Points24 = () => {
   const handleNoSolution = () => {
     // Only show feedback below the button, not in the main result
     if (!hasSolution) {
-      setNoSolutionMsg('This puzzle truly has no solution. Next puzzle!');
-      setTimeout(() => {
-        setNoSolutionMsg('');
-        reset(false);
-      }, 1000);
+      setNoSolutionMsg('This puzzle truly has no solution.');
     } else {
       setNoSolutionMsg('Actually, this puzzle DOES have a solution!');
     }
@@ -148,7 +148,6 @@ const Points24 = () => {
   const reset = (solvable = null) => {
     const newNums = generateNumbers(solvable);
     setNumbers(newNums);
-    setHasSolution(canSolve24(newNums));
     setExpression('');
     setResult('');
     setCorrect(false);

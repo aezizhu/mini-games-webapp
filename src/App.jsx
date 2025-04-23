@@ -18,6 +18,14 @@ import Snake from './games/Snake/Snake.jsx';
 import SlotMachine from './games/SlotMachine/SlotMachine.jsx';
 import Points24 from './games/Points24/Points24.jsx';
 import Doudizhu from './games/Doudizhu/Doudizhu.jsx';
+// Add imports for all unregistered games
+import Chess from './games/Chess/Chess.jsx';
+import Hearts from './games/Hearts/Hearts.jsx';
+import MahjongLinkup from './games/MahjongLinkup/MahjongLinkup.jsx';
+import Minesweeper from './games/Minesweeper/Minesweeper.jsx';
+import Pinball from './games/Pinball/Pinball.jsx';
+import SpiderSolitaire from './games/Spider/SpiderSolitaire.jsx';
+import StreetFighterII from './games/StreetFighterII/StreetFighterII.jsx';
 const Help = () => <div>Help & Instructions (Coming Soon)</div>;
 
 // Main App component
@@ -41,6 +49,14 @@ function App() {
                     <Route path="/slot-machine" element={<SlotMachine />} />
                     <Route path="/24-points" element={<Points24 />} />
                     <Route path="/doudizhu" element={<Doudizhu />} />
+                    {/* Add routes for all unregistered games */}
+                    <Route path="/chess" element={<Chess />} />
+                    <Route path="/hearts" element={<Hearts />} />
+                    <Route path="/mahjong-linkup" element={<MahjongLinkup />} />
+                    <Route path="/minesweeper" element={<Minesweeper />} />
+                    <Route path="/pinball" element={<Pinball />} />
+                    <Route path="/spider" element={<SpiderSolitaire />} />
+                    <Route path="/street-fighter-ii" element={<StreetFighterII />} />
                     <Route path="/help" element={<Help />} />
                   </Routes>
                 </Content>
