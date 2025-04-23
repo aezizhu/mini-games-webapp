@@ -29,43 +29,10 @@ const Help = () => <div>Help & Instructions (Coming Soon)</div>;
 
 // Main App component
 function App() {
+  // Debug: always show this div to verify App render
+  // Remove after debugging!
   return (
-    <Router>
-      <ThemeProvider theme={theme}>
-        <AudioProvider>
-          <SettingsProvider>
-            <GlobalStyle />
-            <AppContainer>
-              <Header />
-              <MainContent>
-                <Sidebar />
-                <Content>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/2048" element={<Game2048 />} />
-                    <Route path="/tetris" element={<Tetris />} />
-                    <Route path="/snake" element={<Snake />} />
-                    <Route path="/slot-machine" element={<SlotMachine />} />
-                    <Route path="/24-points" element={<Points24 />} />
-                    <Route path="/doudizhu" element={<Doudizhu />} />
-                    <Route path="/minesweeper" element={<Minesweeper />} />
-                    <Route path="/hearts" element={<Hearts />} />
-                    <Route path="/pinball" element={<PinballGame />} />
-                    <Route path="/spider" element={<SpiderSolitaire />} />
-                    <Route path="/chess" element={<Chess />} />
-                    <Route path="/mahjong-linkup" element={<MahjongLinkup />} /> // Register the MahjongLinkup component in the route table
-                    <Route path="/street-fighter-ii" element={<StreetFighterII />} /> // Register the StreetFighterII component in the route table
-                    <Route path="/help" element={<Help />} />
-                  </Routes>
-                </Content>
-              </MainContent>
-              <Footer />
-              <SettingsModal />
-            </AppContainer>
-          </SettingsProvider>
-        </AudioProvider>
-      </ThemeProvider>
-    </Router>
+    <div style={{color: 'red', fontSize: '2rem', textAlign: 'center', margin: '32px'}}>APP ROOT VISIBLE</div>
   );
 }
 

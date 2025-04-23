@@ -127,26 +127,31 @@ const Home = () => {
     }
   ];
 
+  // Debug: always show this div to verify render
+  // Remove after debugging!
   return (
-    <PageContainer>
-      <HomeHeader>
-        <Title>Mini Games Collection</Title>
-        <Subtitle>Select a game to play</Subtitle>
-      </HomeHeader>
+    <div>
+      <div style={{color: 'red', fontSize: '2rem', textAlign: 'center', margin: '32px'}}>TEST VISIBLE</div>
+      <PageContainer>
+        <HomeHeader>
+          <Title>Mini Games Collection</Title>
+          <Subtitle>Select a game to play</Subtitle>
+        </HomeHeader>
 
-      <Grid>
-        {games.map(game => (
-          <GameCard key={game.id} as={Link} to={game.path} $color={game.color}>
-            <GameIconWrapper $color={game.color}>
-              {game.icon}
-            </GameIconWrapper>
-            <GameTitle>{game.title}</GameTitle>
-            <GameDescription>{game.description}</GameDescription>
-            <PlayButton>Play Now</PlayButton>
-          </GameCard>
-        ))}
-      </Grid>
-    </PageContainer>
+        <Grid>
+          {games.map(game => (
+            <GameCard key={game.id} as={Link} to={game.path} $color={game.color}>
+              <GameIconWrapper $color={game.color}>
+                {game.icon}
+              </GameIconWrapper>
+              <GameTitle>{game.title}</GameTitle>
+              <GameDescription>{game.description}</GameDescription>
+              <PlayButton>Play Now</PlayButton>
+            </GameCard>
+          ))}
+        </Grid>
+      </PageContainer>
+    </div>
   );
 };
 
