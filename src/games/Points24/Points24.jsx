@@ -7,12 +7,23 @@ import canSolve24 from './solver24';
 function generateNumbers(solvable = null) {
   // If solvable is true, only return numbers with a solution
   // If solvable is false, only return numbers with no solution
-  // If solvable is null, return any numbers
+  // If solvable is null, return numbers with <10% chance unsolvable
   let nums;
-  while (true) {
-    nums = Array.from({ length: 4 }, () => Math.floor(Math.random() * 13) + 1);
-    const hasSolution = canSolve24(nums);
-    if (solvable === null || hasSolution === solvable) return nums;
+  if (solvable === null) {
+    // 90% chance to generate a solvable puzzle, 10% chance unsolvable
+    const wantSolvable = Math.random() > 0.1 ? true : false;
+    while (true) {
+      nums = Array.from({ length: 4 }, () => Math.floor(Math.random() * 13) + 1);
+      const hasSolution = canSolve24(nums);
+      if (wantSolvable && hasSolution) return nums;
+      if (!wantSolvable && !hasSolution) return nums;
+    }
+  } else {
+    while (true) {
+      nums = Array.from({ length: 4 }, () => Math.floor(Math.random() * 13) + 1);
+      const hasSolution = canSolve24(nums);
+      if (solvable === null || hasSolution === solvable) return nums;
+    }
   }
 }
 
@@ -59,30 +70,48 @@ const Points24 = () => {
   const [result, setResult] = useState('');
   const [correct, setCorrect] = useState(false);
   const [hasSolution, setHasSolution] = useState(canSolve24(numbers));
+  const [noSolutionMsg, setNoSolutionMsg] = useState(''); // Feedback for No Solution button
 
   // Check if the user's expression is valid and equals 24
   const checkResult = () => {
-    const numCopy = [...numbers];
-    const tokens = expression.match(/\d+/g);
-    if (!tokens || tokens.length !== 4) {
-      setResult('You must use all 4 numbers, each exactly once.');
+    setNoSolutionMsg(''); // Clear no solution feedback on new answer
+    // Validate that each number is used exactly once
+    const numCounts = {};
+    numbers.forEach(n => {
+      numCounts[n] = (numCounts[n] || 0) + 1;
+    });
+    // Extract all numbers from the expression
+    const usedNums = (expression.match(/\d+/g) || []).map(Number);
+    const usedCounts = {};
+    usedNums.forEach(n => {
+      usedCounts[n] = (usedCounts[n] || 0) + 1;
+    });
+    let valid = true;
+    for (const n of numbers) {
+      if (!usedCounts[n] || usedCounts[n] > numCounts[n]) {
+        valid = false;
+        break;
+      }
+      usedCounts[n]--;
+    }
+    // Check if any extra numbers are used
+    for (const n in usedCounts) {
+      if (usedCounts[n] > 0) {
+        valid = false;
+        break;
+      }
+    }
+    if (!valid) {
+      setResult('You must use each provided number exactly once.');
       setCorrect(false);
       return;
-    }
-    for (let t of tokens) {
-      const idx = numCopy.indexOf(Number(t));
-      if (idx === -1) {
-        setResult('You must use each number exactly once.');
-        setCorrect(false);
-        return;
-      }
-      numCopy.splice(idx, 1);
     }
     try {
       const val = safeEvaluate(expression);
       if (Math.abs(val - 24) < 1e-6) {
         setResult('Correct! 🎉');
         setCorrect(true);
+        setNoSolutionMsg('');
         // Automatically start a new round after 1.2 seconds
         setTimeout(() => {
           const newNums = generateNumbers();
@@ -102,6 +131,20 @@ const Points24 = () => {
     }
   };
 
+  // Improved No Solution button logic
+  const handleNoSolution = () => {
+    // Only show feedback below the button, not in the main result
+    if (!hasSolution) {
+      setNoSolutionMsg('This puzzle truly has no solution. Next puzzle!');
+      setTimeout(() => {
+        setNoSolutionMsg('');
+        reset(false);
+      }, 1000);
+    } else {
+      setNoSolutionMsg('Actually, this puzzle DOES have a solution!');
+    }
+  };
+
   const reset = (solvable = null) => {
     const newNums = generateNumbers(solvable);
     setNumbers(newNums);
@@ -109,6 +152,7 @@ const Points24 = () => {
     setExpression('');
     setResult('');
     setCorrect(false);
+    setNoSolutionMsg('');
   };
 
   return (
@@ -129,12 +173,12 @@ const Points24 = () => {
         />
         <button onClick={checkResult} disabled={correct}>Submit</button>
         <button onClick={() => reset(null)} style={{ marginLeft: 12 }}>New</button>
-        <button onClick={() => reset(false)} style={{ marginLeft: 12 }}>No Solution</button>
+        <button onClick={handleNoSolution} style={{ marginLeft: 12 }}>No Solution</button>
+        {noSolutionMsg && (
+          <div style={{ marginTop: 8, color: '#d2691e', fontSize: 15 }}>{noSolutionMsg}</div>
+        )}
       </div>
       {result && <Result $correct={correct}>{result}</Result>}
-      <div style={{ marginTop: 8, color: hasSolution ? 'green' : 'red', fontSize: 14 }}>
-        {hasSolution ? 'This puzzle has a solution.' : 'No solution exists for this puzzle.'}
-      </div>
       <div style={{ marginTop: 14, color: '#888', fontSize: 14 }}>
         Use +, -, *, / and parentheses. Each number must be used exactly once.<br/>
         Example: (8/(3-1))*6
