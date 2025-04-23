@@ -16,6 +16,20 @@ function generateNumbers(solvable = null) {
   }
 }
 
+// Safely evaluate a mathematical expression
+function safeEvaluate(expression) {
+  // Validate the expression to only allow safe mathematical operations
+  // Only allow digits, basic operators, parentheses, and whitespace
+  if (!/^[\d\s\(\)\+\-\*\/\.]+$/.test(expression)) {
+    throw new Error("Invalid characters in expression");
+  }
+  
+  // Use Function constructor instead of eval
+  // This is still not completely safe for user input in production,
+  // but better than direct eval for this game context
+  return new Function(`return ${expression}`)();
+}
+
 // Styled components
 const Numbers = styled.div`
   display: flex;
@@ -65,8 +79,7 @@ const Points24 = () => {
       numCopy.splice(idx, 1);
     }
     try {
-      // eslint-disable-next-line no-eval
-      const val = eval(expression);
+      const val = safeEvaluate(expression);
       if (Math.abs(val - 24) < 1e-6) {
         setResult('Correct! 🎉');
         setCorrect(true);
