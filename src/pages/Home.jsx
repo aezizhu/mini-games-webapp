@@ -6,14 +6,7 @@ import {
   FaDragon, 
   FaDice, 
   FaCalculator, 
-  FaRegCreditCard, 
-  FaBomb, 
-  FaHeart,
-  FaCircle,
-  FaSpider,
-  FaChessKnight,
-  FaThLarge,
-  FaFistRaised
+  FaRegCreditCard 
 } from 'react-icons/fa';
 import { Grid, Card, PageContainer } from '../styles/Layout';
 
@@ -68,62 +61,6 @@ const Home = () => {
       icon: <FaRegCreditCard />,
       color: '#ff9800',
       path: '/doudizhu'
-    },
-    {
-      id: 'minesweeper',
-      title: 'Minesweeper',
-      description: 'Uncover all safe cells and avoid the mines in this classic puzzle game.',
-      icon: <FaBomb />,
-      color: '#607d8b',
-      path: '/minesweeper'
-    },
-    {
-      id: 'hearts',
-      title: 'Hearts',
-      description: 'Microsoft classic card game. Avoid hearts and the Queen of Spades!',
-      icon: <FaHeart />,
-      color: '#e53935',
-      path: '/hearts'
-    },
-    {
-      id: 'pinball',
-      title: '3D Pinball',
-      description: 'Classic pinball game. Use flippers to keep the ball in play and score points!',
-      icon: <FaCircle />, // Use a pinball-like icon
-      color: '#1976d2',
-      path: '/pinball'
-    },
-    {
-      id: 'spider',
-      title: 'Spider Solitaire',
-      description: 'Classic Microsoft Spider Solitaire. Arrange cards in descending order to clear suits!',
-      icon: <FaSpider />,
-      color: '#4e342e',
-      path: '/spider'
-    },
-    {
-      id: 'chess',
-      title: 'Chess',
-      description: 'Classic Windows Chess. Play against the computer or a friend!',
-      icon: <FaChessKnight />,
-      color: '#263238',
-      path: '/chess'
-    },
-    {
-      id: 'mahjong-linkup',
-      title: 'Mahjong Linkup',
-      description: 'Classic Windows Mahjong Linkup. Match and clear all tiles!',
-      icon: <FaThLarge />,
-      color: '#bdb76b',
-      path: '/mahjong-linkup'
-    },
-    {
-      id: 'street-fighter-ii',
-      title: 'Street Fighter II',
-      description: 'Classic fighting game. Play as Ryu or Ken in a 1v1 battle!',
-      icon: <FaFistRaised />,
-      color: '#b71c1c',
-      path: '/street-fighter-ii'
     }
   ];
 
