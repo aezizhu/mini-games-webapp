@@ -18,21 +18,40 @@ import Snake from './games/Snake/Snake.jsx';
 import SlotMachine from './games/SlotMachine/SlotMachine.jsx';
 import Points24 from './games/Points24/Points24.jsx';
 import Doudizhu from './games/Doudizhu/Doudizhu.jsx';
-import Minesweeper from './games/Minesweeper/Minesweeper.jsx';
-import Hearts from './games/Hearts/Hearts.jsx';
-import PinballGame from './games/Pinball/Pinball.jsx';
-import SpiderSolitaire from './games/Spider/SpiderSolitaire.jsx';
-import Chess from './games/Chess/Chess.jsx';
-import MahjongLinkup from './games/MahjongLinkup/MahjongLinkup'; // Import the MahjongLinkup component
-import StreetFighterII from './games/StreetFighterII/StreetFighterII.jsx'; // Import the StreetFighterII component
 const Help = () => <div>Help & Instructions (Coming Soon)</div>;
 
 // Main App component
 function App() {
-  // Debug: always show this div to verify App render
-  // Remove after debugging!
   return (
-    <div style={{color: 'red', fontSize: '2rem', textAlign: 'center', margin: '32px'}}>APP ROOT VISIBLE</div>
+    <Router>
+      <ThemeProvider theme={theme}>
+        <AudioProvider>
+          <SettingsProvider>
+            <GlobalStyle />
+            <AppContainer>
+              <Header />
+              <MainContent>
+                <Sidebar />
+                <Content>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/2048" element={<Game2048 />} />
+                    <Route path="/tetris" element={<Tetris />} />
+                    <Route path="/snake" element={<Snake />} />
+                    <Route path="/slot-machine" element={<SlotMachine />} />
+                    <Route path="/24-points" element={<Points24 />} />
+                    <Route path="/doudizhu" element={<Doudizhu />} />
+                    <Route path="/help" element={<Help />} />
+                  </Routes>
+                </Content>
+              </MainContent>
+              <Footer />
+              <SettingsModal />
+            </AppContainer>
+          </SettingsProvider>
+        </AudioProvider>
+      </ThemeProvider>
+    </Router>
   );
 }
 
