@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styled, { keyframes, css } from 'styled-components';
+import styled, { css } from 'styled-components';
 import { GameContainer } from '../../styles/Layout';
 import CHARACTERS from './characters';
 import STAGES from './stages';
@@ -127,40 +127,41 @@ function StreetFighterII() {
   }
 
   useEffect(() => {
-    if (gameOver) return;
-    function handleKeyDown(e) {
-      // Only allow input for current player and only if not locked/attacking/blocking
-      if (actionLock.current || players[turn].attacking || players[turn].blocking || gameOver) return;
-      keysPressed.current[e.code] = true;
-      // Map key to logical input
-      let input = null;
-      if (turn === 0) {
-        if (e.code === 'KeyA') input = 'Left';
-        if (e.code === 'KeyD') input = 'Right';
-        if (e.code === 'KeyF') input = 'Attack';
-        if (e.code === 'KeyG') input = 'Block';
-        if (e.code === 'KeyH') input = 'Special';
-      } else if (!aiEnabled && turn === 1) {
-        if (e.code === 'ArrowLeft') input = 'Left';
-        if (e.code === 'ArrowRight') input = 'Right';
-        if (e.code === 'Numpad1') input = 'Attack';
-        if (e.code === 'Numpad2') input = 'Block';
-        if (e.code === 'Numpad3') input = 'Special';
+    if (!gameOver) {
+      function handleKeyDown(e) {
+        // Only allow input for current player and only if not locked/attacking/blocking
+        if (actionLock.current || players[turn].attacking || players[turn].blocking || gameOver) return;
+        keysPressed.current[e.code] = true;
+        // Map key to logical input
+        let input = null;
+        if (turn === 0) {
+          if (e.code === 'KeyA') input = 'Left';
+          if (e.code === 'KeyD') input = 'Right';
+          if (e.code === 'KeyF') input = 'Attack';
+          if (e.code === 'KeyG') input = 'Block';
+          if (e.code === 'KeyH') input = 'Special';
+        } else if (!aiEnabled && turn === 1) {
+          if (e.code === 'ArrowLeft') input = 'Left';
+          if (e.code === 'ArrowRight') input = 'Right';
+          if (e.code === 'Numpad1') input = 'Attack';
+          if (e.code === 'Numpad2') input = 'Block';
+          if (e.code === 'Numpad3') input = 'Special';
+        }
+        if (input) {
+          setPlayers(ps => ps.map((p,i) => i===turn ? {...p, inputBuffer: pushInput(p.inputBuffer, input)} : p));
+        }
+        handlePlayerAction();
       }
-      if (input) {
-        setPlayers(ps => ps.map((p,i) => i===turn ? {...p, inputBuffer: pushInput(p.inputBuffer, input)} : p));
+      function handleKeyUp(e) {
+        keysPressed.current[e.code] = false;
       }
-      handlePlayerAction();
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+      };
     }
-    function handleKeyUp(e) {
-      keysPressed.current[e.code] = false;
-    }
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
   }, [turn, aiEnabled, gameOver, players]);
 
   function handlePlayerAction() {
@@ -246,7 +247,7 @@ function StreetFighterII() {
       setGameOver(true);
       setActionText(`${players[0].hp <= 0 ? players[1].name : players[0].name} wins!`);
     }
-  }, [players]);
+  }, [players[0].hp, players[1].hp, players[0].name, players[1].name]);
 
   function handleRestart() {
     setSelectData(null); // Go back to select screen

@@ -12,18 +12,24 @@ function generateNumbers(solvable = null) {
   if (solvable === null) {
     // 90% chance to generate a solvable puzzle, 10% chance unsolvable
     const wantSolvable = Math.random() > 0.1 ? true : false;
-    while (true) {
+    let attempts = 0;
+    while (attempts < 100) { // Add a limit to prevent infinite loop
+      attempts++;
       nums = Array.from({ length: 4 }, () => Math.floor(Math.random() * 13) + 1);
       const hasSolution = canSolve24(nums);
       if (wantSolvable && hasSolution) return nums;
       if (!wantSolvable && !hasSolution) return nums;
     }
+    return [1, 2, 3, 4]; // Fallback values if no suitable numbers found
   } else {
-    while (true) {
+    let attempts = 0;
+    while (attempts < 100) { // Add a limit to prevent infinite loop
+      attempts++;
       nums = Array.from({ length: 4 }, () => Math.floor(Math.random() * 13) + 1);
       const hasSolution = canSolve24(nums);
       if (solvable === null || hasSolution === solvable) return nums;
     }
+    return [1, 2, 3, 4]; // Fallback values if no suitable numbers found
   }
 }
 
@@ -31,7 +37,8 @@ function generateNumbers(solvable = null) {
 function safeEvaluate(expression) {
   // Validate the expression to only allow safe mathematical operations
   // Only allow digits, basic operators, parentheses, and whitespace
-  if (!/^[\d\s\(\)\+\-\*\/\.]+$/.test(expression)) {
+  // Fixed regex to avoid unnecessary escape characters
+  if (!/^[\d\s()+\-*/.]+$/.test(expression)) {
     throw new Error("Invalid characters in expression");
   }
   
@@ -114,7 +121,7 @@ const Points24 = () => {
     try {
       const val = safeEvaluate(expression);
       if (Math.abs(val - 24) < 1e-6) {
-        setResult('Correct! 🎉');
+        setResult('Correct! ');
         setCorrect(true);
         setNoSolutionMsg('');
         // Automatically start a new round after 1.2 seconds

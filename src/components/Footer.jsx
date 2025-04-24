@@ -9,7 +9,7 @@ const Footer = () => {
     <FooterContainer>
       <FooterContent>
         <FooterText>
-          © {currentYear} Mini Games Web App. All rights reserved.
+          {currentYear} Mini Games Web App. All rights reserved.
         </FooterText>
         <FooterLinks>
           <FooterLink href="https://github.com/yourusername/mini-games-webapp" target="_blank" rel="noopener noreferrer">
@@ -26,12 +26,12 @@ const Footer = () => {
 
 // Styled components
 const FooterContainer = styled.footer`
-  background-color: ${({ theme }) => theme.colors.surface};
-  border-top: 1px solid ${({ theme }) => `rgba(0, 0, 0, 0.1)`};
-  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.lg};
+  background-color: ${props => props.theme.colors.surface};
+  border-top: 1px solid ${props => `rgba(0, 0, 0, 0.1)`};
+  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
   
-  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
-    padding-bottom: calc(${({ theme }) => theme.spacing.md} + 60px); // Extra padding for mobile navigation
+  @media (max-width: ${props => props.theme.breakpoints.sm}) {
+    padding-bottom: calc(${props => props.theme.spacing.md} + 60px); // Extra padding for mobile navigation
   }
 `;
 
@@ -42,47 +42,47 @@ const FooterContent = styled.div`
   max-width: 1400px;
   margin: 0 auto;
   
-  @media (max-width: ${({ theme }) => theme.breakpoints.md}) {
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
     flex-direction: column;
-    gap: ${({ theme }) => theme.spacing.md};
+    gap: ${props => props.theme.spacing.md};
     text-align: center;
   }
 `;
 
 const FooterText = styled.p`
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${props => props.theme.textLight || '#333'};
   font-size: 0.875rem;
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.spacing.xs};
+  gap: ${props => props.theme.spacing.xs};
 `;
 
 const FooterLinks = styled.div`
   display: flex;
-  gap: ${({ theme }) => theme.spacing.lg};
+  gap: ${props => props.theme.spacing.lg};
   align-items: center;
   
-  @media (max-width: ${({ theme }) => theme.breakpoints.sm}) {
+  @media (max-width: ${props => props.theme.breakpoints.sm}) {
     flex-direction: column;
-    gap: ${({ theme }) => theme.spacing.md};
+    gap: ${props => props.theme.spacing.md};
   }
 `;
 
 const FooterLink = styled.a`
-  color: ${({ theme }) => theme.colors.textLight};
+  color: ${props => props.theme.textLight || '#333'};
   font-size: 0.875rem;
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.spacing.xs};
-  transition: color ${({ theme }) => theme.transitions.short};
+  gap: ${props => props.theme.spacing.xs};
+  transition: color ${props => props.theme.transitions.short};
   
   &:hover {
-    color: ${({ theme }) => theme.colors.primary};
+    color: ${props => props.theme.primary};
   }
 `;
 
 const HeartIcon = styled(FaHeart)`
-  color: ${({ theme }) => theme.colors.secondary};
+  color: ${props => props.theme.secondary};
 `;
 
 export default Footer;
